@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>iLab Inventory · Dashboard</title>
+<title>iLab Inventory Analysis Dashboard</title>
 
 <!-- Fonts: editorial serif + utilitarian mono -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -155,12 +155,31 @@
   }
   .download-btn:hover{border-color:var(--accent);color:var(--accent)}
   .download-btn svg{width:13px;height:13px}
+  .download-btn-prominent{
+    padding:12px 20px;font-size:13px;background:var(--ink);color:var(--paper);border-color:var(--ink);
+  }
+  .download-btn-prominent svg{width:15px;height:15px}
+  .download-btn-prominent:hover{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+
+  .empty-tab{
+    padding:48px 36px;background:var(--card);border:1px solid var(--line);border-radius:6px;
+    text-align:left;max-width:560px;
+  }
+  .empty-tab h2{font-family:'Fraunces',serif;font-weight:500;font-size:20px;letter-spacing:-.01em}
 
   /* ——— canvas ——— */
   .canvas{padding:28px 40px 60px;overflow-x:hidden}
 
   /* KPI row */
-  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:28px}
+  .kpis{
+    display:grid;grid-template-columns:repeat(6,1fr);gap:14px;
+    margin:0 -40px 28px;padding:18px 40px;
+    position:sticky;top:80px;z-index:30;
+    background:var(--paper);
+    border-bottom:1px solid var(--line);
+    backdrop-filter:blur(8px);
+    background:rgba(246,241,230,.92);
+  }
   .kpi{
     background:var(--card);border:1px solid var(--line);padding:18px 18px 16px;
     border-radius:6px;position:relative;overflow:hidden;
@@ -169,6 +188,7 @@
   .kpi:hover{transform:translateY(-2px);box-shadow:0 8px 24px -12px rgba(26,25,21,.15)}
   .kpi .k-label{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
   .kpi .k-value{font-family:'Fraunces',serif;font-weight:500;font-size:32px;letter-spacing:-.02em;color:var(--ink);line-height:1}
+  .kpi .k-value .k-denom{color:var(--muted);font-weight:400;font-size:22px}
   .kpi .k-unit{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-top:6px}
   .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent)}
   .kpi.k-green::before{background:var(--accent-2)}
@@ -221,6 +241,32 @@
     background:rgba(46,74,58,.12);color:#1b5f3e;
     font-weight:500;letter-spacing:.04em;
   }
+  /* Recommendation pills for EC Inventory */
+  .rec{
+    display:inline-block;padding:2px 8px;border-radius:3px;
+    font-size:10.5px;font-weight:500;letter-spacing:.04em;
+    white-space:nowrap;
+  }
+  .rec-discontinue{background:rgba(166,48,48,.1);color:var(--danger)}
+  .rec-review{background:rgba(200,161,61,.18);color:#7a5e16}
+  .rec-active{background:rgba(46,74,58,.1);color:var(--accent-2)}
+
+  /* Date preset buttons */
+  .ec-presets{display:inline-flex;gap:0;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+  .preset-btn{
+    background:var(--card);border:none;border-right:1px solid var(--line);
+    padding:6px 11px;cursor:pointer;font-family:inherit;
+    font-size:10.5px;color:var(--muted);letter-spacing:.04em;
+    transition:background .12s, color .12s;
+  }
+  .preset-btn:last-child{border-right:none}
+  .preset-btn:hover{color:var(--ink)}
+  .preset-btn.active{background:var(--ink);color:var(--paper)}
+  .preset-btn.active:hover{color:var(--paper)}
+
+  /* Compact numeric cells in EC table */
+  #tbl-ec td.num,#tbl-ec th.num{font-size:12px}
+  #tbl-ec td.dim{color:var(--muted)}
 
   /* tabs for bottom section */
   .tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:16px}
@@ -278,8 +324,12 @@
     aside.filters h3{margin-top:14px;font-size:10px}
     .filter-group{max-height:140px;font-size:13px}
 
-    /* KPI tiles — 2 per row on phones */
-    .kpis{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+    /* KPI tiles — 2 per row on phones, NOT sticky (would eat half the screen) */
+    .kpis{
+      grid-template-columns:repeat(2,1fr);gap:10px;
+      position:static;background:transparent;backdrop-filter:none;
+      margin:0 0 20px;padding:0;border-bottom:none;
+    }
     .kpi{padding:14px 12px 12px}
     .kpi .k-label{font-size:9px;letter-spacing:.1em}
     .kpi .k-value{font-size:22px}
@@ -340,7 +390,7 @@
 
 <header class="topbar">
   <div>
-    <div class="title">iLab Inventory Analysis <em>Dashboard</em></div>
+    <div class="title">iLab Inventory Analysis<em>Dashboard</em></div>
     
   </div>
   <div class="topbar-right">
@@ -419,18 +469,24 @@
         </div>
         <div class="kpi k-red">
           <div class="k-label">Dead Stock</div>
-          <div class="k-value"><span id="kpi-dead">—</span></div>
-          <div class="k-unit">products, never used</div>
+          <div class="k-value">
+            <span id="kpi-dead">—</span><span class="k-denom"> / <span id="kpi-dead-total">—</span></span>
+          </div>
+          <div class="k-unit">never used in PKO</div>
         </div>
         <div class="kpi">
           <div class="k-label">Fast Moving</div>
-          <div class="k-value"><span id="kpi-fast">—</span></div>
-          <div class="k-unit">&gt;5 projects</div>
+          <div class="k-value">
+            <span id="kpi-fast">—</span><span class="k-denom"> / <span id="kpi-active-total">—</span></span>
+          </div>
+          <div class="k-unit">&gt;5 projects, of used SKUs</div>
         </div>
         <div class="kpi k-blue">
           <div class="k-label">Slow Moving</div>
-          <div class="k-value"><span id="kpi-slow">—</span></div>
-          <div class="k-unit">≤5 projects</div>
+          <div class="k-value">
+            <span id="kpi-slow">—</span><span class="k-denom"> / <span id="kpi-active-total-2">—</span></span>
+          </div>
+          <div class="k-unit">≤5 projects, of used SKUs</div>
         </div>
       </div>
 
@@ -474,6 +530,7 @@
           <div class="tab" data-tab="fast">Fast Moving <span class="tab-count" id="cnt-fast">0</span></div>
           <div class="tab" data-tab="slow">Slow Moving <span class="tab-count" id="cnt-slow">0</span></div>
           <div class="tab" data-tab="discontinued">Discontinued <span class="tab-count" id="cnt-discontinued">0</span></div>
+          <div class="tab" data-tab="ec">EC Inventory <span class="tab-count" id="cnt-ec">0</span></div>
         </div>
 
         <div id="tab-dead" class="tab-pane">
@@ -542,26 +599,63 @@
           </div>
         </div>
         <div id="tab-discontinued" class="tab-pane" style="display:none">
+          <div class="empty-tab">
+            <div>
+              <h2 style="margin:0 0 6px">Discontinued Products</h2>
+              <p style="margin:0 0 4px;color:var(--ink-2);font-size:13px">
+                Products used in past PKOs but no longer in the Studio catalog.
+              </p>
+              <p style="margin:0 0 24px;color:var(--muted);font-size:12px;line-height:1.5">
+                These aren't part of your current offering, so we don't show the full list.
+                Download the CSV when you need it — typically for cleaning historical data
+                or checking what's been removed from the catalog.
+              </p>
+              <button class="download-btn download-btn-prominent" data-dl="discontinued">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 12l-4-4h3V2h2v6h3l-4 4zm-6 4v2h12v-2H4z"/></svg>
+                Download <span id="discontinued-count">0</span> discontinued products
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-ec" class="tab-pane" style="display:none">
           <div class="tab-actions">
             <div>
-              <h2 style="margin:0 0 4px">Discontinued Products · Used in PKO but not in Studio</h2>
-              <div class="card-sub">top 500 shown</div>
+              <h2 style="margin:0 0 4px">EC Inventory · slow movers by Expert Centre</h2>
+              <div class="card-sub">demand vs branch usage · for inventory optimization</div>
             </div>
-            <button class="download-btn" data-dl="discontinued">
-              Download CSV
-            </button>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="ec-presets">
+                <button class="preset-btn" data-preset="3m">Last 3M</button>
+                <button class="preset-btn active" data-preset="6m">Last 6M</button>
+                <button class="preset-btn" data-preset="12m">Last 12M</button>
+                <button class="preset-btn" data-preset="all">All</button>
+              </div>
+              <button class="download-btn" data-dl="ec">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 12l-4-4h3V2h2v6h3l-4 4zm-6 4v2h12v-2H4z"/></svg>
+                Download CSV
+              </button>
+            </div>
           </div>
-
-          <div class="scroll-table" style="max-height:480px">
-            <table id="tbl-discontinued">
+          <div class="card-sub" id="ec-window-label" style="margin-top:-4px;margin-bottom:12px">window: last 6 months</div>
+          <div class="scroll-table" style="max-height:540px">
+            <table id="tbl-ec">
               <thead>
                 <tr>
                   <th>Product Name</th>
                   <th>Category</th>
                   <th>Brand</th>
                   <th>ERP Code</th>
-                  <th class="num">Projects</th>
+                  <th class="num">HSR</th>
+                  <th class="num">HRBR</th>
+                  <th class="num">Thane</th>
+                  <th class="num">Andheri</th>
+                  <th class="num">M-Dev</th>
+                  <th class="num">Total Proj</th>
                   <th class="num">Revenue (₹)</th>
+                  <th class="num">Last Used</th>
+                  <th>Recommendation</th>
+                  <th>Shopify</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -592,8 +686,10 @@ const STATE = {
     excludePid:true,
     shopifyFilter:'all',
   },
+  ecWindow: '6m',          // EC report window: '3m' | '6m' | '12m' | 'all'
   charts: {},
   lastDead: [], lastFast: [], lastSlow: [],   // cached for CSV download
+  lastEC: [],
 };
 
 const PALETTE = {
@@ -617,6 +713,19 @@ const BADGE_CLASS = {
   'type_service':'badge-service',
   'type_others':'badge-others',
 };
+
+/* ——— EC (Expert Centre) labels ———
+   Maps internal branch codes to user-friendly EC names. Used in the
+   EC Inventory report. Easy to extend / rename. */
+const EC_LABELS = {
+  'BNG - HSR':   'HSR',
+  'BNG - HRBR':  'HRBR',
+  'MUM - Thane': 'Thane',
+  'MUM - GOR':   'Andheri',
+  'Mumbai-Dev':  'Mumbai-Dev',
+};
+// Display order for branch columns in the EC report
+const EC_ORDER = ['BNG - HSR','BNG - HRBR','MUM - Thane','MUM - GOR','Mumbai-Dev'];
 
 /* ——— Canonical category whitelist ———
    The CSV data contains typos, stray spaces, and legacy category names.
@@ -1062,9 +1171,20 @@ function buildFilters(){
       if(stale[key]){
         if(key==='dead') renderDeadTable(stale.dead);
         else if(key==='fast' || key==='slow') renderMovementTable('tbl-'+key, stale[key]);
-        else if(key==='discontinued') renderDiscontinuedTable(stale.discontinued);
+        else if(key==='ec') renderECTable(stale.ec);
+        // discontinued tab has no table render — just download button
         stale[key] = null;
       }
+    });
+  });
+
+  // EC date-window preset buttons
+  document.querySelectorAll('.preset-btn[data-preset]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.preset-btn[data-preset]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      STATE.ecWindow = btn.dataset.preset;
+      scheduleRefresh();
     });
   });
 
@@ -1300,20 +1420,34 @@ STATE.lastDiscontinued = discontinued;
 
 document.getElementById('cnt-discontinued').textContent =
   discontinued.length.toLocaleString();
+const dcCount = document.getElementById('discontinued-count');
+if(dcCount) dcCount.textContent = discontinued.length.toLocaleString();
 
   // cache for CSV downloads
   STATE.lastDead = dead;
   STATE.lastFast = fast;
   STATE.lastSlow = slow;
 
+  // Denominators for the X / Total KPI display:
+  // — Dead-stock denom: universe of sellable Studio SKUs under filter
+  //   (must match the same filter rules dead-stock uses, minus the "used" check)
+  const deadDenom = studio.filter(s =>
+    s.erp && !s.isLogicVariant && s.hasPrice
+  ).length;
+  // — Active denom: distinct SKUs used in filtered sales (= fast + slow + any zeros)
+  const activeDenom = fast.length + slow.length;
+
   document.getElementById('kpi-revenue').textContent  = fmtCr(totalRev);
   document.getElementById('kpi-discontinued').textContent = fmtCr(discontinuedRev);
   document.getElementById('kpi-discontinued-sub').textContent =
     `${fmtN(discontinuedProjects.size)} projects`;
   document.getElementById('kpi-projects').textContent = fmtN(projects);
-  document.getElementById('kpi-dead').textContent     = fmtN(dead.length);
-  document.getElementById('kpi-fast').textContent     = fmtN(fast.length);
-  document.getElementById('kpi-slow').textContent     = fmtN(slow.length);
+  document.getElementById('kpi-dead').textContent       = fmtN(dead.length);
+  document.getElementById('kpi-dead-total').textContent = fmtN(deadDenom);
+  document.getElementById('kpi-fast').textContent       = fmtN(fast.length);
+  document.getElementById('kpi-active-total').textContent = fmtN(activeDenom);
+  document.getElementById('kpi-slow').textContent       = fmtN(slow.length);
+  document.getElementById('kpi-active-total-2').textContent = fmtN(activeDenom);
 
   document.getElementById('cnt-dead').textContent = fmtN(dead.length);
   document.getElementById('cnt-fast').textContent = fmtN(fast.length);
@@ -1335,19 +1469,28 @@ document.getElementById('cnt-discontinued').textContent =
   drawCategoryChart(sales);
   renderMonthTable(sales);
 
+  // EC report uses its own time window — compute from full sales (post all
+  // other filters except date), so the EC preset can override the date filter.
+  // Note: still respects branch/brand/category/shopify filters.
+  const ecRows = computeECReport(sales, STATE.ecWindow);
+  STATE.lastEC = ecRows;
+  document.getElementById('cnt-ec').textContent = fmtN(ecRows.length);
+  document.getElementById('ec-window-label').textContent = 'window: ' + ecWindowLabel(STATE.ecWindow);
+
   // Only render the table for the CURRENTLY VISIBLE tab — saves ~50% table render time
   const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'dead';
   if(activeTab === 'dead') renderDeadTable(dead);
   else if(activeTab === 'fast') renderMovementTable('tbl-fast', fast);
   else if(activeTab === 'slow') renderMovementTable('tbl-slow', slow);
-  else if(activeTab === 'discontinued') renderDiscontinuedTable(discontinued);
+  else if(activeTab === 'ec') renderECTable(ecRows);
+  // discontinued tab has no table — count and download button update via main flow
   // Mark others as stale so they re-render on tab click
   STATE._staleTabs = {
-  dead: activeTab !== 'dead' ? dead : null,
-  fast: activeTab !== 'fast' ? fast : null,
-  slow: activeTab !== 'slow' ? slow : null,
-  discontinued: activeTab !== 'discontinued' ? discontinued : null,
-};
+    dead: activeTab !== 'dead' ? dead : null,
+    fast: activeTab !== 'fast' ? fast : null,
+    slow: activeTab !== 'slow' ? slow : null,
+    ec: activeTab !== 'ec' ? ecRows : null,
+  };
 
   console.log('[PKO] refresh:', (performance.now()-t0).toFixed(1), 'ms');
 }
@@ -1693,6 +1836,150 @@ function renderMovementTable(tblId, rows){
 }
 }
 
+/* ——— EC Inventory report ———
+   Builds a slow-moving-by-Expert-Centre report from sales data, scoped to
+   the chosen window (3M / 6M / 12M / all). Independent of the global
+   date filter — this report has its own time window controlled by the
+   preset buttons. */
+function computeECReport(sales, windowKey){
+  // Compute window cutoff
+  const now = STATE._dateMax || new Date();
+  let cutoff = null;
+  if(windowKey === '3m')  cutoff = new Date(now.getTime() - 90*24*3600*1000);
+  if(windowKey === '6m')  cutoff = new Date(now.getTime() - 182*24*3600*1000);
+  if(windowKey === '12m') cutoff = new Date(now.getTime() - 365*24*3600*1000);
+
+  // Single pass: aggregate per-ERP usage with per-branch project breakdown
+  const map = new Map();
+  for(let i=0;i<sales.length;i++){
+    const r = sales[i];
+    if(cutoff && r.date < cutoff) continue;
+    if(!r.erp) continue;
+    let m = map.get(r.erp);
+    if(!m){
+      m = {
+        erp: r.erp,
+        productName: r.productName || r.itemName,
+        category: r.category, brand: r.brand,
+        defaultCategory: r.defaultCategory,
+        revenue: 0,
+        lastUsed: null,
+        // Per-branch project sets (so we count *unique* projects, not rows)
+        branchProjects: new Map(),  // branchCode -> Set of projectNo
+        allProjects: new Set(),
+      };
+      map.set(r.erp, m);
+    }
+    m.revenue += r.amount;
+    if(!m.lastUsed || r.date > m.lastUsed) m.lastUsed = r.date;
+    m.allProjects.add(r.projectNo);
+    let bp = m.branchProjects.get(r.branch);
+    if(!bp){ bp = new Set(); m.branchProjects.set(r.branch, bp); }
+    bp.add(r.projectNo);
+  }
+
+  // Materialize rows with per-branch counts and recommendation
+  const rows = [];
+  map.forEach(m => {
+    const totalProj = m.allProjects.size;
+    if(totalProj > 5) return;   // only slow movers (≤5 projects in window)
+    const branches = {};
+    EC_ORDER.forEach(code => {
+      branches[code] = m.branchProjects.get(code)?.size || 0;
+    });
+    const daysSince = m.lastUsed ? Math.floor((now - m.lastUsed) / (24*3600*1000)) : null;
+    let rec, recClass;
+    if(totalProj === 0){
+      rec = 'Discontinue'; recClass = 'rec-discontinue';
+    } else if(totalProj <= 2){
+      rec = 'Review';      recClass = 'rec-review';
+    } else {
+      rec = 'Slow but active'; recClass = 'rec-active';
+    }
+    rows.push({
+      erp: m.erp, productName: m.productName,
+      category: m.category, brand: m.brand,
+      revenue: m.revenue, lastUsed: m.lastUsed, daysSince,
+      branches, totalProj, rec, recClass,
+    });
+  });
+
+  // Also include products with ZERO usage in the window IF they appeared
+  // outside the window — these are the most actionable inventory items.
+  if(cutoff){
+    const inWindowErps = new Set(rows.map(r=>r.erp));
+    const allTimeMap = new Map();
+    for(let i=0;i<sales.length;i++){
+      const r = sales[i];
+      if(!r.erp || inWindowErps.has(r.erp)) continue;
+      let m = allTimeMap.get(r.erp);
+      if(!m){
+        m = {
+          erp: r.erp,
+          productName: r.productName || r.itemName,
+          category: r.category, brand: r.brand,
+          revenue: 0, lastUsed: null,
+        };
+        allTimeMap.set(r.erp, m);
+      }
+      m.revenue += r.amount;
+      if(!m.lastUsed || r.date > m.lastUsed) m.lastUsed = r.date;
+    }
+    allTimeMap.forEach(m => {
+      const daysSince = m.lastUsed ? Math.floor((now - m.lastUsed) / (24*3600*1000)) : null;
+      const branches = {};
+      EC_ORDER.forEach(code => { branches[code] = 0; });
+      rows.push({
+        erp: m.erp, productName: m.productName,
+        category: m.category, brand: m.brand,
+        revenue: m.revenue, lastUsed: m.lastUsed, daysSince,
+        branches, totalProj: 0,
+        rec: 'Discontinue', recClass: 'rec-discontinue',
+      });
+    });
+  }
+
+  // Sort: zero-projects first (worst), then by total projects ASC, then by daysSince DESC
+  rows.sort((a,b) =>
+    a.totalProj - b.totalProj ||
+    (b.daysSince||0) - (a.daysSince||0) ||
+    a.revenue - b.revenue
+  );
+  return rows;
+}
+
+function renderECTable(rows){
+  const tb = document.querySelector('#tbl-ec tbody');
+  const top = rows.slice(0, 500);
+  if(!top.length){
+    tb.innerHTML = '<tr><td colspan="14" style="text-align:center;color:var(--muted);padding:24px">No slow movers in this window — try a wider preset</td></tr>';
+    return;
+  }
+  const shopifySet = STATE._shopifyErpSet || new Set();
+  const fmtDate = d => d ? d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'}) : '—';
+  tb.innerHTML = top.map(r => `
+    <tr>
+      <td>${escapeHtml(r.productName)}</td>
+      <td>${escapeHtml(r.category)}</td>
+      <td>${escapeHtml(r.brand)}</td>
+      <td class="mono" style="font-size:11.5px">${escapeHtml(r.erp)}</td>
+      <td class="num ${r.branches['BNG - HSR']?'':'dim'}">${r.branches['BNG - HSR']||'—'}</td>
+      <td class="num ${r.branches['BNG - HRBR']?'':'dim'}">${r.branches['BNG - HRBR']||'—'}</td>
+      <td class="num ${r.branches['MUM - Thane']?'':'dim'}">${r.branches['MUM - Thane']||'—'}</td>
+      <td class="num ${r.branches['MUM - GOR']?'':'dim'}">${r.branches['MUM - GOR']||'—'}</td>
+      <td class="num ${r.branches['Mumbai-Dev']?'':'dim'}">${r.branches['Mumbai-Dev']||'—'}</td>
+      <td class="num">${r.totalProj}</td>
+      <td class="num">${fmtINR(r.revenue)}</td>
+      <td class="num" title="${r.daysSince!=null?r.daysSince+' days ago':''}">${fmtDate(r.lastUsed)}</td>
+      <td><span class="rec ${r.recClass}">${r.rec}</span></td>
+      <td>${shopifySet.has(r.erp) ? '<span class="badge badge-shopify">Yes</span>' : '<span style="color:var(--muted)">—</span>'}</td>
+    </tr>`).join('');
+}
+
+function ecWindowLabel(key){
+  return ({'3m':'last 3 months','6m':'last 6 months','12m':'last 12 months','all':'all time'})[key] || 'last 6 months';
+}
+
 function escapeHtml(s){
   if(s==null) return '';
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1769,6 +2056,28 @@ function downloadCsv(which){
   );
 
   saveFile(`discontinued_${todayStamp()}.csv`, csv);
+} else if(which==='ec'){
+  const fmtDate = d => d ? d.toISOString().slice(0,10) : '';
+  const rows = STATE.lastEC.map(r => [
+    r.productName, r.category, r.brand, r.erp,
+    r.branches['BNG - HSR']||0,
+    r.branches['BNG - HRBR']||0,
+    r.branches['MUM - Thane']||0,
+    r.branches['MUM - GOR']||0,
+    r.branches['Mumbai-Dev']||0,
+    r.totalProj, r.revenue.toFixed(2),
+    fmtDate(r.lastUsed),
+    r.daysSince!=null ? r.daysSince : '',
+    r.rec,
+    (STATE._shopifyErpSet && STATE._shopifyErpSet.has(r.erp)) ? 'Yes' : '',
+  ]);
+  const csv = toCsv(
+    ['Product Name','Category','Brand','ERP Code',
+     'HSR (projects)','HRBR (projects)','Thane (projects)','Andheri (projects)','Mumbai-Dev (projects)',
+     'Total Projects','Revenue (INR)','Last Used','Days Since','Recommendation','On Shopify'],
+    rows
+  );
+  saveFile(`slow_moving_ec_report_${todayStamp()}_${STATE.ecWindow}.csv`, csv);
 }
 }
 
