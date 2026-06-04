@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>iLab Inventory Analysis Dashboard</title>
+<title>iLab Inventory AnalysisDashboard</title>
 
 <!-- Fonts: editorial serif + utilitarian mono -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -168,17 +168,25 @@
   .empty-tab h2{font-family:'Fraunces',serif;font-weight:500;font-size:20px;letter-spacing:-.01em}
 
   /* ——— canvas ——— */
-  .canvas{padding:28px 40px 60px;overflow-x:hidden}
+  .canvas{padding:28px 40px 60px}
+  /* Hide horizontal overflow at body level instead of canvas so sticky still works inside canvas */
+  body{overflow-x:hidden}
 
-  /* KPI row */
+  /* KPI row — sticks below the topbar when scrolling */
   .kpis{
     display:grid;grid-template-columns:repeat(6,1fr);gap:14px;
-    margin:0 -40px 28px;padding:18px 40px;
-    position:sticky;top:80px;z-index:30;
-    background:var(--paper);
+    margin:0 -40px 28px;padding:16px 40px;
+    position:sticky;top:90px;z-index:30;
+    background:rgba(246,241,230,.94);
+    backdrop-filter:blur(10px);
     border-bottom:1px solid var(--line);
-    backdrop-filter:blur(8px);
-    background:rgba(246,241,230,.92);
+    transition:box-shadow .2s ease;
+  }
+  /* Subtle shadow that appears once the row is "stuck" — purely visual cue */
+  .kpis::after{
+    content:'';position:absolute;left:0;right:0;bottom:-12px;height:12px;
+    background:linear-gradient(180deg,rgba(26,25,21,.05),transparent);
+    pointer-events:none;
   }
   .kpi{
     background:var(--card);border:1px solid var(--line);padding:18px 18px 16px;
@@ -390,7 +398,7 @@
 
 <header class="topbar">
   <div>
-    <div class="title">iLab Inventory Analysis<em>Dashboard</em></div>
+    <div class="title">iLab Inventory Analysis <em>Dashboard</em></div>
     
   </div>
   <div class="topbar-right">
@@ -621,7 +629,7 @@
         <div id="tab-ec" class="tab-pane" style="display:none">
           <div class="tab-actions">
             <div>
-              <h2 style="margin:0 0 4px">EC Inventory · slow movers by EC</h2>
+              <h2 style="margin:0 0 4px">EC Inventory · slow movers by Expert Centre</h2>
               <div class="card-sub">demand vs branch usage · for inventory optimization</div>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
@@ -1027,7 +1035,13 @@ async function init(){
       const first = yrs[0], last = yrs[yrs.length-1];
       fyLabel = ` · FY${String(first).slice(-2)} – FY${String(last).slice(-2)}`;
     }
-    status.textContent = `${STATE.studio.length.toLocaleString()} products${fyLabel}`;
+    // Count "sellable" products (matches the dead-stock denominator universe):
+    // excludes logic variants (_WITH_MDF / _WITHOUT_MDF) and unpriced reference rows.
+    // This is the same number shown in the Dead Stock denominator, so the two reconcile.
+    const sellableCount = STATE.studio.filter(s =>
+      s.erp && !s.isLogicVariant && s.hasPrice
+    ).length;
+    status.textContent = `${sellableCount.toLocaleString()} products${fyLabel}`;
     status.classList.add('loaded');
 
     buildFilters();
