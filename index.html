@@ -485,16 +485,16 @@
         <div class="kpi">
           <div class="k-label">Fast Moving</div>
           <div class="k-value">
-            <span id="kpi-fast">—</span><span class="k-denom"> / <span id="kpi-active-total">—</span></span>
+            <span id="kpi-fast">—</span>
           </div>
-          <div class="k-unit">&gt;5 projects, of used SKUs</div>
+          <div class="k-unit">of <span id="kpi-active-total-label">—</span> used (&gt;5 projects)</div>
         </div>
         <div class="kpi k-blue">
           <div class="k-label">Slow Moving</div>
           <div class="k-value">
-            <span id="kpi-slow">—</span><span class="k-denom"> / <span id="kpi-active-total-2">—</span></span>
+            <span id="kpi-slow">—</span>
           </div>
-          <div class="k-unit">≤5 projects, of used SKUs</div>
+          <div class="k-unit">of <span id="kpi-active-total-label-2">—</span> used (≤5 projects)</div>
         </div>
       </div>
 
@@ -1459,9 +1459,9 @@ if(dcCount) dcCount.textContent = discontinued.length.toLocaleString();
   document.getElementById('kpi-dead').textContent       = fmtN(dead.length);
   document.getElementById('kpi-dead-total').textContent = fmtN(deadDenom);
   document.getElementById('kpi-fast').textContent       = fmtN(fast.length);
-  document.getElementById('kpi-active-total').textContent = fmtN(activeDenom);
+  document.getElementById('kpi-active-total-label').textContent = fmtN(activeDenom);
   document.getElementById('kpi-slow').textContent       = fmtN(slow.length);
-  document.getElementById('kpi-active-total-2').textContent = fmtN(activeDenom);
+  document.getElementById('kpi-active-total-label-2').textContent = fmtN(activeDenom);
 
   document.getElementById('cnt-dead').textContent = fmtN(dead.length);
   document.getElementById('cnt-fast').textContent = fmtN(fast.length);
