@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ilab Inventory · Dashboard</title>
+<title>PKO Sales · Dashboard</title>
 
 <!-- Fonts: editorial serif + utilitarian mono -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -561,7 +561,7 @@
 
 <header class="topbar">
   <div>
-    <div class="title">ilab Inventory Analysis <em>Dashboard</em></div>
+    <div class="title">Sales <em>Dashboard</em></div>
     
   </div>
   <div class="topbar-right">
@@ -1376,6 +1376,39 @@ async function init(){
     const LOGIC_SUFFIX_RE = /_(WITH_?MDF|WITHOUT_?MDF)$/i;
     const baseErp = e => e ? e.replace(LOGIC_SUFFIX_RE, '') : e;
 
+    /* Parse the Studio dump's "Created Date". Handles the common formats:
+       - "2019-12-14 13:19:35 +0530"     (most rows, ISO + space-separated TZ)
+       - "2024-08-29"                     (some rows)
+       - "27-08-2024"                     (DD-MM-YYYY rare)
+       Returns a Date object, or null if unparseable. */
+    function parseStudioDate(raw){
+      if(!raw) return null;
+      const s = String(raw).trim();
+      if(!s) return null;
+      // Format: "YYYY-MM-DD HH:MM:SS +HHMM" — needs explicit reformat for Safari/older browsers
+      let m = s.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})\s*([+-])(\d{2}):?(\d{2})?$/);
+      if(m){
+        const iso = `${m[1]}T${m[2]}${m[3]}${m[4]}:${m[5]||'00'}`;
+        const d = new Date(iso);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      // Format: "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS" (no tz)
+      m = s.match(/^(\d{4}-\d{2}-\d{2})([ T]\d{2}:\d{2}:\d{2})?$/);
+      if(m){
+        const d = new Date(s.replace(' ','T'));
+        return isNaN(d.getTime()) ? null : d;
+      }
+      // Format: "DD-MM-YYYY"
+      m = s.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+      if(m){
+        const d = new Date(`${m[3]}-${m[2]}-${m[1]}T00:00:00`);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      // Last resort — let the browser try
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
     // Detect one-off PID products by name
     const PID_RE = /\bPID[\s:\-]*\d*/i;
     const isPid = r => PID_RE.test(r['Product Name']||'') || PID_RE.test(r['Item Name']||'');
@@ -1410,14 +1443,9 @@ async function init(){
       const mumSpNum = parseFloat(rawMum);
       const hasBngPrice = rawBng !== '' && !isNaN(bngSpNum) && bngSpNum > 0;
       const hasMumPrice = rawMum !== '' && !isNaN(mumSpNum) && mumSpNum > 0;
-      // Parse 'Created Date' — usually ISO like '2019-12-14 13:19:35 +0530'
-      // The Date constructor handles this format directly.
-      const rawCreated = (r['Created Date']||'').toString().trim();
-      let createdDate = null;
-      if(rawCreated){
-        const d = new Date(rawCreated.replace(' ','T'));
-        if(!isNaN(d.getTime())) createdDate = d;
-      }
+      // Parse 'Created Date' — format is usually "2019-12-14 13:19:35 +0530"
+      // which the bare Date() constructor fails on. Use the dedicated helper.
+      const createdDate = parseStudioDate(r['Created Date']);
       return {
         productId: r['Product ID'],
         productName: r['Product Name']||'',
@@ -1454,6 +1482,13 @@ async function init(){
     console.log('  Dead stock (studio ERPs not in sales):', studioErps.size - overlap);
     if(STATE.studio.length === 0){
       console.warn('[PKO Dashboard] Studio CSV loaded 0 rows! Check that Studio_Dump_for_PKO_Sales.csv exists and is a real CSV (not a Git LFS pointer).');
+    }
+    // Diagnostic: how many studio rows got a valid Created Date?
+    const withDate = STATE.studio.filter(r => r.createdDate).length;
+    console.log('  Studio rows with parsed Created Date:', withDate, '/', STATE.studio.length);
+    if(withDate === 0 && STATE.studio.length > 0){
+      console.warn('[PKO Dashboard] NO Created Dates parsed! Avg-Age / Old-Dead KPIs will show blanks. First raw value:',
+                   JSON.stringify(STATE.studio[0] && studio[0] && studio[0]['Created Date']));
     }
 
     // ——— Pre-compute index caches (done ONCE, dramatically speeds up refresh) ———
@@ -2547,7 +2582,7 @@ function computeBrandAnalysis(studio, sales){
   });
 
   // Aggregate by (main, sub, brand)
-  const now = STATE._dateMax || new Date();
+  const now = new Date();   // age relative to today, not last sales date
   const map = new Map();   // key = main|sub|brand
   for(let i=0;i<studio.length;i++){
     const s = studio[i];
@@ -2694,10 +2729,11 @@ function renderInventoryView(studio, sales, brandRows){
 
   let deadCount=0, deadVal=0, oldDeadCount=0;
   let slowCount=0, slowRev=0;
-  const now = STATE._dateMax || new Date();
+  const now = new Date();  // age is relative to TODAY, not last sales date
   for(const s of studio){
     if(!s.erp || s.isLogicVariant || !s.hasPrice) continue;
-    const sc = subCategoryOf(s); if(!sc) continue;
+    // Note: do NOT gate on subCategoryOf — KPIs count ALL sellable SKUs.
+    // Sub-cat is only used for the per-Main/Sub/Brand drill-down tables below.
     const isDead = !salesErps.has(s.erp) && !salesBaseErps.has(s.baseErp);
     if(isDead){
       deadCount++;
