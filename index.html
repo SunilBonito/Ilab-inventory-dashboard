@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ilab Inventory Analysis · Dashboard</title>
+<title>ilab Inventory · Dashboard</title>
 
 <!-- Fonts: editorial serif + utilitarian mono -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,7 +49,6 @@
     display:flex;align-items:baseline;justify-content:space-between;
     padding:28px 40px 18px;border-bottom:1px solid var(--line);
     background:var(--paper);
-    position:sticky;top:0;z-index:50;
   }
   .title{font-family:'Fraunces',serif;font-weight:600;font-size:28px;letter-spacing:-.01em}
   .title em{font-style:italic;color:var(--accent);font-weight:500}
@@ -65,7 +64,6 @@
     border-right:1px solid var(--line);
     padding:24px 22px;
     background:linear-gradient(180deg,var(--paper) 0%, var(--paper-2) 100%);
-    overflow-y:auto;max-height:calc(100vh - 80px);position:sticky;top:80px;
   }
   aside.filters h3{
     font-family:'Fraunces',serif;font-weight:500;font-size:11px;
@@ -168,25 +166,181 @@
   .empty-tab h2{font-family:'Fraunces',serif;font-weight:500;font-size:20px;letter-spacing:-.01em}
 
   /* ——— canvas ——— */
-  .canvas{padding:28px 40px 60px}
-  /* Hide horizontal overflow at body level instead of canvas so sticky still works inside canvas */
+  .canvas{padding:28px 40px 60px;min-width:0}
   body{overflow-x:hidden}
 
-  /* KPI row — sticks below the topbar when scrolling */
+  /* ——— View toggle (Sales / Inventory Analysis) ——— */
+  .view-toggle{
+    display:inline-flex;background:var(--card);border:1px solid var(--line);
+    border-radius:8px;padding:4px;margin-bottom:24px;gap:2px;
+  }
+  .view-toggle button{
+    background:transparent;border:0;padding:8px 18px;font-size:13px;
+    font-family:inherit;font-weight:500;color:var(--muted);cursor:pointer;
+    border-radius:6px;transition:all .15s ease;letter-spacing:.01em;
+  }
+  .view-toggle button:hover:not(.active){color:var(--ink)}
+  .view-toggle button.active{
+    background:var(--ink);color:var(--paper);
+  }
+
+  /* ——— Inventory analysis view styling ——— */
+  .inv-section{margin-bottom:32px}
+  .inv-section-title{
+    font-family:'Fraunces',serif;font-weight:500;font-size:22px;
+    letter-spacing:-.01em;margin:0 0 4px;color:var(--ink);
+  }
+  .inv-section-sub{font-size:12px;color:var(--muted);margin-bottom:18px}
+
+  /* Inventory KPI tiles — distinct color accent per tile */
+  .inv-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:28px}
+  .inv-kpi{
+    background:var(--card);border:1px solid var(--line);
+    border-radius:8px;padding:18px 16px 16px;position:relative;overflow:hidden;
+  }
+  .inv-kpi::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  }
+  .inv-kpi.k-orange::before{background:#d97706}
+  .inv-kpi.k-rose::before  {background:var(--accent)}
+  .inv-kpi.k-amber::before {background:#b45309}
+  .inv-kpi.k-yellow::before{background:#a16207}
+  .inv-kpi.k-green::before {background:var(--accent-2)}
+  .inv-kpi.k-teal::before  {background:#0f766e}
+  .inv-kpi .ik-label{font-size:10px;font-weight:600;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+  .inv-kpi .ik-value{font-family:'Fraunces',serif;font-size:28px;font-weight:500;
+    color:var(--ink);letter-spacing:-.02em;line-height:1.1}
+  .inv-kpi .ik-sub{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.3}
+
+  /* Findings + Metric definitions panel */
+  .inv-panels{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:28px}
+  .inv-panel{
+    background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px 20px;
+  }
+  .inv-panel-dark{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .inv-panel-title{
+    font-family:'Fraunces',serif;font-weight:500;font-size:16px;
+    margin:0 0 14px;display:flex;align-items:center;gap:8px;
+  }
+  .inv-panel-dark .inv-panel-title{color:var(--paper)}
+  .finding{display:flex;gap:12px;padding:10px 12px;background:var(--paper);border-radius:6px;margin-bottom:8px;align-items:flex-start}
+  .finding:last-child{margin-bottom:0}
+  .finding-num{
+    flex-shrink:0;width:26px;height:26px;border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--paper);font-weight:600;font-size:13px;
+  }
+  .finding-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px}
+  .finding-body{font-size:11.5px;color:var(--muted);line-height:1.4}
+  .finding-cta{color:var(--ink);font-weight:600}
+
+  .defs dl{margin:0;font-size:11.5px}
+  .defs dt{font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-top:10px}
+  .defs dt:first-child{margin-top:0}
+  .defs dd{margin:3px 0 0;color:#cfcab8;line-height:1.4;font-size:11px}
+  .defs dt.d-orange{color:#fbbf24}
+  .defs dt.d-rose  {color:#fca5a5}
+  .defs dt.d-amber {color:#fcd34d}
+  .defs dt.d-yellow{color:#fde68a}
+  .defs dt.d-teal  {color:#5eead4}
+
+  /* Per-main sourcing table */
+  .inv-table-wrap{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:28px}
+  .inv-table-head{padding:14px 18px;background:var(--paper-2,#ece5d3);border-bottom:1px solid var(--line)}
+  .inv-table-head h3{margin:0;font-family:'Fraunces',serif;font-weight:500;font-size:16px;color:var(--ink)}
+  .inv-table-head .sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .inv-table{width:100%;border-collapse:collapse;font-size:13px}
+  .inv-table thead th{
+    background:var(--ink);color:var(--paper);
+    text-transform:uppercase;font-size:10.5px;letter-spacing:.06em;font-weight:600;
+    padding:10px 12px;text-align:left;white-space:nowrap;
+  }
+  .inv-table thead th.num{text-align:right}
+  .inv-table thead th.ctr{text-align:center}
+  .inv-table tbody td{padding:10px 12px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .inv-table tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .inv-table tbody td.ctr{text-align:center}
+  .inv-table tbody tr:hover{background:var(--paper)}
+  .inv-table tbody tr:last-child td{border-bottom:0}
+  .inv-table tfoot td{
+    background:var(--ink);color:var(--paper);font-weight:600;
+    padding:11px 12px;font-size:12.5px;
+  }
+  .inv-table tfoot td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .inv-table tfoot td.ctr{text-align:center}
+  .priority-pill{display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em}
+  .priority-high{background:#fce8e2;color:var(--accent);border:1px solid #f4c8b8}
+  .priority-med {background:#f7f0dc;color:#7a5e16;border:1px solid #e2d4a6}
+  .priority-low {background:var(--paper);color:var(--muted);border:1px solid var(--line)}
+
+  /* Brand drill filters */
+  .inv-filters{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px 18px;background:var(--paper);border-bottom:1px solid var(--line)}
+  .inv-filters label{display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:5px}
+  .inv-filters select{
+    width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);font-family:inherit;font-size:13px;color:var(--ink);
+  }
+  .inv-filters select:focus{outline:none;border-color:var(--ink)}
+
+  .age-badge{
+    display:inline-block;padding:3px 8px;border-radius:4px;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;
+  }
+  .age-red  {background:#fce8e2;color:var(--accent)}
+  .age-gold {background:#f7f0dc;color:#7a5e16}
+  .age-green{background:#e0e8df;color:var(--accent-2)}
+  .age-grey {background:var(--paper);color:var(--muted)}
+
+  .age-legend{display:flex;flex-wrap:wrap;gap:6px;font-size:10px;font-weight:700}
+  .age-legend span{padding:3px 8px;border-radius:4px;border:1px solid}
+  .age-legend .l-red  {background:#fce8e2;color:var(--accent);border-color:#f4c8b8}
+  .age-legend .l-gold {background:#f7f0dc;color:#7a5e16;border-color:#e2d4a6}
+  .age-legend .l-green{background:#e0e8df;color:var(--accent-2);border-color:#bcd1be}
+
+  /* Brand table — desktop = table, mobile = cards */
+  .inv-brand-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .inv-brand-cards{display:none}
+
+  @media (max-width:720px){
+    .inv-kpis{grid-template-columns:repeat(2,1fr);gap:10px}
+    .inv-kpi{padding:12px 12px 10px}
+    .inv-kpi .ik-value{font-size:22px}
+    .inv-panels{grid-template-columns:1fr;gap:14px}
+    .inv-filters{grid-template-columns:1fr;gap:10px;padding:12px 14px}
+    .inv-table-head{padding:12px 14px}
+    .inv-table thead th, .inv-table tbody td{padding:9px 10px;font-size:11.5px}
+    /* Show cards instead of table on mobile */
+    .inv-brand-table-wrap{display:none}
+    .inv-brand-cards{display:block;padding:14px}
+    .inv-brand-card{
+      background:var(--paper);border:1px solid var(--line);border-radius:8px;
+      padding:12px 14px;margin-bottom:10px;
+    }
+    .inv-brand-card .bc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
+    .inv-brand-card .bc-brand{font-size:14px;font-weight:600;color:var(--ink);line-height:1.2}
+    .inv-brand-card .bc-sub{font-size:10.5px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+    .inv-brand-card .bc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .inv-brand-card .bc-stat{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px 6px;text-align:center}
+    .inv-brand-card .bc-stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+    .inv-brand-card .bc-stat-val{font-size:14px;font-weight:600;color:var(--ink);margin-top:2px;font-variant-numeric:tabular-nums}
+    .inv-brand-mobile-total{
+      background:var(--ink);color:var(--paper);border-radius:8px;padding:14px;margin:14px;
+    }
+    .inv-brand-mobile-total .imt-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.7;margin-bottom:8px}
+    .inv-brand-mobile-total .imt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .inv-brand-mobile-total .imt-cell{font-size:9px;text-transform:uppercase;letter-spacing:.05em;opacity:.7}
+    .inv-brand-mobile-total .imt-cell strong{display:block;font-size:14px;opacity:1;margin-top:2px;font-weight:600}
+  }
+
+  @media (max-width:1100px){
+    .inv-kpis{grid-template-columns:repeat(3,1fr)}
+    .inv-panels{grid-template-columns:1fr}
+  }
+
+  /* KPI row — scrolls naturally with content (not sticky) */
   .kpis{
     display:grid;grid-template-columns:repeat(6,1fr);gap:14px;
-    margin:0 -40px 28px;padding:16px 40px;
-    position:sticky;top:90px;z-index:30;
-    background:rgba(246,241,230,.94);
-    backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--line);
-    transition:box-shadow .2s ease;
-  }
-  /* Subtle shadow that appears once the row is "stuck" — purely visual cue */
-  .kpis::after{
-    content:'';position:absolute;left:0;right:0;bottom:-12px;height:12px;
-    background:linear-gradient(180deg,rgba(26,25,21,.05),transparent);
-    pointer-events:none;
+    margin:0 0 28px;
   }
   .kpi{
     background:var(--card);border:1px solid var(--line);padding:18px 18px 16px;
@@ -232,8 +386,8 @@
   tr.total-row td{font-weight:600;border-top:2px solid var(--ink);border-bottom:none;font-family:'Fraunces',serif;font-size:14px}
   tr.total-row td.num{font-family:'JetBrains Mono',monospace;font-weight:600}
 
-  .scroll-table{max-height:360px;overflow-y:auto;border-radius:4px}
-  .scroll-table::-webkit-scrollbar{width:6px}
+  .scroll-table{max-height:360px;overflow-y:auto;overflow-x:auto;border-radius:4px;-webkit-overflow-scrolling:touch}
+  .scroll-table::-webkit-scrollbar{width:6px;height:6px}
   .scroll-table::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
 
   .badge{
@@ -364,6 +518,15 @@
     #tbl-fast th:nth-child(6), #tbl-fast td:nth-child(6),
     #tbl-slow th:nth-child(6), #tbl-slow td:nth-child(6){display:none}
 
+    /* Brand Analysis tab — 10 cols won't fit. Hide Main (col 1), Slow (col 9),
+       and Slow Rev (col 10). Brand + Sub-Cat + the 5 dead metrics remain. */
+    #tbl-brand th:nth-child(1), #tbl-brand td:nth-child(1),
+    #tbl-brand th:nth-child(9), #tbl-brand td:nth-child(9),
+    #tbl-brand th:nth-child(10), #tbl-brand td:nth-child(10){display:none}
+    /* On phones, allow brand table to scroll horizontally as a last resort */
+    #tbl-brand{font-size:11px}
+    #tbl-brand th, #tbl-brand td{padding:6px 5px;white-space:nowrap}
+
     /* Tab layout */
     .tabs{flex-wrap:wrap}
     .tab{padding:8px 10px;font-size:10px;letter-spacing:.06em}
@@ -459,6 +622,12 @@
     <div class="loading" id="loader">Loading data…</div>
     <div id="main-content" style="display:none">
 
+      <div class="view-toggle" role="tablist">
+        <button id="vtoggle-sales" class="active" data-view="sales">Sales Dashboard</button>
+        <button id="vtoggle-inventory" data-view="inventory">Inventory Analysis</button>
+      </div>
+
+      <div id="view-sales">
       <div class="kpis">
         <div class="kpi k-ink">
           <div class="k-label">Total Revenue</div>
@@ -711,6 +880,191 @@
           </div>
         </div>
       </div>
+
+      </div><!-- end #view-sales -->
+
+      <div id="view-inventory" style="display:none">
+
+        <section class="inv-section">
+          <div class="inv-section-title">Inventory Optimization Dashboard</div>
+          <div class="inv-section-sub">Apr 2025 – May 2026 · Studio dump · live computed from filters</div>
+
+          <div class="inv-kpis">
+            <div class="inv-kpi k-orange">
+              <div class="ik-label">Dead Stock</div>
+              <div class="ik-value" id="ikpi-dead">—</div>
+              <div class="ik-sub">SKUs never used in any PKO</div>
+            </div>
+            <div class="inv-kpi k-rose">
+              <div class="ik-label">Dead Value</div>
+              <div class="ik-value" id="ikpi-deadval">—</div>
+              <div class="ik-sub">Crores catalog value idle</div>
+            </div>
+            <div class="inv-kpi k-amber">
+              <div class="ik-label">Old Dead (&gt;1 yr)</div>
+              <div class="ik-value" id="ikpi-old">—</div>
+              <div class="ik-sub" id="ikpi-old-sub">true delist candidates</div>
+            </div>
+            <div class="inv-kpi k-yellow">
+              <div class="ik-label">Slow Movers</div>
+              <div class="ik-value" id="ikpi-slow">—</div>
+              <div class="ik-sub">SKUs inside 1-5 projects only</div>
+            </div>
+            <div class="inv-kpi k-green">
+              <div class="ik-label">Slow Revenue</div>
+              <div class="ik-value" id="ikpi-slowrev">—</div>
+              <div class="ik-sub">Crores earned by slow movers</div>
+            </div>
+            <div class="inv-kpi k-teal">
+              <div class="ik-label">Discontinued</div>
+              <div class="ik-value" id="ikpi-disc">—</div>
+              <div class="ik-sub" id="ikpi-disc-sub">already billed; legacy ERPs</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="inv-panels">
+          <div class="inv-panel">
+            <h3 class="inv-panel-title">
+              <span style="display:inline-block;width:8px;height:8px;background:var(--ink);border-radius:50%"></span>
+              Top 4 Strategic Findings
+            </h3>
+            <div class="finding">
+              <div class="finding-num" style="background:#b45309">1</div>
+              <div>
+                <div class="finding-title">69% of dead stock is over 1 year old</div>
+                <div class="finding-body">4,705 SKUs sitting unused 12+ months. 2,394 over 36 months. <span class="finding-cta">Start here.</span></div>
+              </div>
+            </div>
+            <div class="finding">
+              <div class="finding-num" style="background:var(--accent)">2</div>
+              <div>
+                <div class="finding-title">Studio holds 96% of total dead value</div>
+                <div class="finding-body">4,693 dead SKUs · ₹9.14 Cr — Loose Furniture + Wall Arts lead. <span class="finding-cta">Biggest action area.</span></div>
+              </div>
+            </div>
+            <div class="finding">
+              <div class="finding-num" style="background:#a16207">3</div>
+              <div>
+                <div class="finding-title">₹7.28 Cr "discontinued" already billed</div>
+                <div class="finding-body">Mostly service line items (ODP, Electrical, WPC) against legacy codes. <span class="finding-cta">Catalog hygiene only.</span></div>
+              </div>
+            </div>
+            <div class="finding">
+              <div class="finding-num" style="background:var(--accent-2)">4</div>
+              <div>
+                <div class="finding-title">Slow movers earned ₹8.96 Cr</div>
+                <div class="finding-body">2,711 SKUs sold inconsistently — under-promoted, not dead. <span class="finding-cta">Training + sampling.</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-panel inv-panel-dark defs">
+            <h3 class="inv-panel-title">What each metric means</h3>
+            <dl>
+              <dt class="d-orange">DEAD STOCK</dt>
+              <dd>SKUs onboarded with ZERO usage in any PKO across Apr 2025 – May 2026.</dd>
+              <dt class="d-rose">DEAD VALUE</dt>
+              <dd>Catalog selling value of dead SKUs (BNG SP or MUM SP). Not procurement cost.</dd>
+              <dt class="d-amber">OLD DEAD (&gt;1 yr)</dt>
+              <dd>Dead SKUs in Studio for over 12 months. Most actionable for delisting.</dd>
+              <dt class="d-yellow">SLOW MOVERS</dt>
+              <dd>SKUs used in 1 to 5 PKO projects in LAST 6 MONTHS. At risk of turning dead.</dd>
+              <dt class="d-teal">DISCONTINUED</dt>
+              <dd>PKO sales billed against ERP codes no longer in Studio. Mostly service line items already collected.</dd>
+            </dl>
+          </div>
+        </section>
+
+        <section class="inv-table-wrap">
+          <div class="inv-table-head">
+            <h3>Dead Stock + Slow Movers · per Main Sourcing Group</h3>
+            <div class="sub">live aggregation from current filters</div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="inv-table" id="inv-main-table">
+              <thead>
+                <tr>
+                  <th>Sourcing</th>
+                  <th class="num">Dead SKUs</th>
+                  <th class="num">Dead Value (₹Cr)</th>
+                  <th class="num">Slow SKUs</th>
+                  <th class="num">Slow Revenue (₹Cr)</th>
+                  <th class="num">Total Affected</th>
+                  <th class="ctr">Priority</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+              <tfoot></tfoot>
+            </table>
+          </div>
+        </section>
+
+        <section class="inv-table-wrap">
+          <div class="inv-table-head">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+              <div>
+                <h3>By Sub-Sourcing &amp; Brand · with Age</h3>
+                <div class="sub">Value in Lakhs (₹L). Age = months since SKU creation.</div>
+              </div>
+              <div class="age-legend">
+                <span class="l-red">Red 24+ mo — True Delist</span>
+                <span class="l-gold">Gold 12-24 mo — Review</span>
+                <span class="l-green">Green &lt;12 mo — Incubation</span>
+              </div>
+            </div>
+          </div>
+          <div class="inv-filters">
+            <div>
+              <label>Filter Main Sourcing</label>
+              <select id="inv-filter-main">
+                <option value="ALL">All Main Tracks</option>
+                <option value="Studio">Studio</option>
+                <option value="Modular">Modular</option>
+                <option value="Neo Modular">Neo Modular</option>
+                <option value="Service">Service</option>
+              </select>
+            </div>
+            <div>
+              <label>Filter Sub-Sourcing Group</label>
+              <select id="inv-filter-sub">
+                <option value="ALL">All Sub-Groups</option>
+              </select>
+            </div>
+            <div>
+              <label>Filter Age Risk Profile</label>
+              <select id="inv-filter-age">
+                <option value="ALL">All Inventory Tiers</option>
+                <option value="CRITICAL">Critical Dead (24+ months)</option>
+                <option value="WARNING">Review / Stagnant (12-24 months)</option>
+                <option value="NEW">Recent Additions (&lt;12 months)</option>
+              </select>
+            </div>
+          </div>
+          <div class="inv-brand-table-wrap">
+            <table class="inv-table" id="inv-brand-table">
+              <thead>
+                <tr>
+                  <th>Main</th>
+                  <th>Sub-Sourcing</th>
+                  <th>Brand</th>
+                  <th class="num">Total</th>
+                  <th class="num">Dead</th>
+                  <th class="num">Dead %</th>
+                  <th class="ctr">Avg Age (mo)</th>
+                  <th class="num">Dead Value (₹L)</th>
+                  <th class="num">Slow</th>
+                  <th class="num">Slow Rev (₹L)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+              <tfoot></tfoot>
+            </table>
+          </div>
+          <div class="inv-brand-cards" id="inv-brand-cards"></div>
+        </section>
+
+      </div><!-- end #view-inventory -->
 
     </div>
     <div id="error-container"></div>
@@ -1336,6 +1690,38 @@ function buildFilters(){
   document.getElementById('filtersToggle').addEventListener('click', ()=>{
     filtersEl.classList.toggle('open');
   });
+
+  // Top-level view toggle (Sales / Inventory Analysis)
+  STATE.activeView = 'sales';
+  document.querySelectorAll('.view-toggle button[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.dataset.view;
+      if(view === STATE.activeView) return;
+      STATE.activeView = view;
+      document.querySelectorAll('.view-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+      document.getElementById('view-sales').style.display     = view === 'sales' ? '' : 'none';
+      document.getElementById('view-inventory').style.display = view === 'inventory' ? '' : 'none';
+      // If inventory view became active and data is stale, compute now
+      if(view === 'inventory' && STATE._invStale){
+        const studio = applyStudioFilters(STATE.studio);
+        const sales  = applySalesFilters(STATE.sales);
+        const brandRows = computeBrandAnalysis(studio, sales);
+        STATE.lastBrand = brandRows;
+        renderInventoryView(studio, sales, brandRows);
+        STATE._invStale = false;
+      }
+    });
+  });
+  // Brand drill filters
+  ['inv-filter-main','inv-filter-sub','inv-filter-age'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => {
+      if(id === 'inv-filter-main'){
+        document.getElementById('inv-filter-sub').value = 'ALL';
+        populateInvSubFilter(STATE._invBrandRows || []);
+      }
+      renderInvBrandTable();
+    });
+  });
 }
 
 // Programmatically set a filter value (used when clicking chart elements)
@@ -1619,6 +2005,13 @@ if(dcCount) dcCount.textContent = discontinued.length.toLocaleString();
   const brandRows = computeBrandAnalysis(studio, sales);
   STATE.lastBrand = brandRows;
   document.getElementById('cnt-brand').textContent = fmtN(brandRows.length);
+
+  // Inventory Analysis view — render only if it's active to save time
+  if(STATE.activeView === 'inventory'){
+    renderInventoryView(studio, sales, brandRows);
+  } else {
+    STATE._invStale = true;
+  }
 
   // Only render the table for the CURRENTLY VISIBLE tab — saves ~50% table render time
   const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'dead';
@@ -2279,6 +2672,259 @@ function renderBrandTable(rows){
     </tr>
   `;
 }
+
+/* =========================================================
+   Inventory Analysis view — top-level toggle alternative to
+   the Sales Dashboard view. Computes KPIs and per-main +
+   per-brand rollups from already-filtered studio/sales.
+   ========================================================= */
+function renderInventoryView(studio, sales, brandRows){
+  // KPIs
+  const salesErps = new Set(); const salesBaseErps = new Set();
+  for(const r of sales){ if(r.erp){ salesErps.add(r.erp); if(r.baseErp) salesBaseErps.add(r.baseErp); }}
+  const projByErp = new Map(); const revByErp = new Map();
+  for(const r of sales){
+    if(!r.erp) continue;
+    let p = projByErp.get(r.erp); if(!p){ p=new Set(); projByErp.set(r.erp,p); }
+    p.add(r.projectNo);
+    revByErp.set(r.erp, (revByErp.get(r.erp)||0) + r.amount);
+  }
+  const slowErpsSet = new Set();
+  projByErp.forEach((s,e)=>{ if(s.size>=1 && s.size<=5) slowErpsSet.add(e); });
+
+  let deadCount=0, deadVal=0, oldDeadCount=0;
+  let slowCount=0, slowRev=0;
+  const now = STATE._dateMax || new Date();
+  for(const s of studio){
+    if(!s.erp || s.isLogicVariant || !s.hasPrice) continue;
+    const sc = subCategoryOf(s); if(!sc) continue;
+    const isDead = !salesErps.has(s.erp) && !salesBaseErps.has(s.baseErp);
+    if(isDead){
+      deadCount++;
+      deadVal += s.bestPrice || 0;
+      if(s.createdDate){
+        const ageM = (now - s.createdDate) / (1000*60*60*24*30.44);
+        if(ageM >= 12) oldDeadCount++;
+      }
+    }
+    if(slowErpsSet.has(s.erp)){
+      slowCount++;
+      slowRev += revByErp.get(s.erp) || 0;
+    }
+  }
+  // Discontinued: sales ERPs not in studio
+  const studioErpSet = new Set(); for(const s of studio){ if(s.erp) studioErpSet.add(s.erp); }
+  let discRev = 0; const discErps = new Set();
+  for(const r of sales){
+    if(!r.erp) continue;
+    if(!studioErpSet.has(r.erp)){
+      discRev += r.amount;
+      discErps.add(r.erp);
+    }
+  }
+
+  // Fill KPI tiles
+  document.getElementById('ikpi-dead').textContent = fmtN(deadCount);
+  document.getElementById('ikpi-deadval').textContent = '₹' + (deadVal/1e7).toFixed(2) + ' Cr';
+  document.getElementById('ikpi-old').textContent = fmtN(oldDeadCount);
+  const oldPct = deadCount > 0 ? Math.round(oldDeadCount/deadCount*100) : 0;
+  document.getElementById('ikpi-old-sub').textContent = oldPct + '% of dead stock — true delist';
+  document.getElementById('ikpi-slow').textContent = fmtN(slowCount);
+  document.getElementById('ikpi-slowrev').textContent = '₹' + (slowRev/1e7).toFixed(2) + ' Cr';
+  document.getElementById('ikpi-disc').textContent = '₹' + (discRev/1e7).toFixed(2) + ' Cr';
+  document.getElementById('ikpi-disc-sub').textContent = fmtN(discErps.size) + ' legacy ERPs · already billed';
+
+  // === Per-Main Sourcing table ===
+  const MAIN_LIST = ['Studio','Neo Modular','Modular','Service'];
+  const mainAgg = {};
+  MAIN_LIST.forEach(m => mainAgg[m] = {dead:0, deadVal:0, slow:0, slowRev:0});
+  for(const r of brandRows){
+    const a = mainAgg[r.main]; if(!a) continue;
+    a.dead += r.dead;
+    a.deadVal += r.deadValLakh / 100; // L -> Cr
+    a.slow += r.slow;
+    a.slowRev += r.slowRevLakh / 100;
+  }
+  const priorityOf = m => m === 'Studio' ? 'HIGH' : (m === 'Neo Modular' ? 'MEDIUM' : 'LOW');
+  const priorityClass = p => p === 'HIGH' ? 'priority-high' : (p === 'MEDIUM' ? 'priority-med' : 'priority-low');
+
+  // Sort by total affected desc
+  const sortedMains = MAIN_LIST.slice().sort((a,b) => (mainAgg[b].dead+mainAgg[b].slow) - (mainAgg[a].dead+mainAgg[a].slow));
+
+  let totalDead=0, totalDeadVal=0, totalSlow=0, totalSlowRev=0;
+  const mainRowsHtml = sortedMains.map(m => {
+    const a = mainAgg[m];
+    const totalAffected = a.dead + a.slow;
+    totalDead += a.dead; totalDeadVal += a.deadVal; totalSlow += a.slow; totalSlowRev += a.slowRev;
+    const pr = priorityOf(m);
+    return `
+      <tr>
+        <td style="font-weight:600">${m}</td>
+        <td class="num" style="color:var(--accent);font-weight:600">${fmtN(a.dead)}</td>
+        <td class="num">₹${a.deadVal.toFixed(2)}</td>
+        <td class="num" style="color:#7a5e16">${fmtN(a.slow)}</td>
+        <td class="num" style="color:var(--accent-2)">₹${a.slowRev.toFixed(2)}</td>
+        <td class="num" style="font-weight:600">${fmtN(totalAffected)}</td>
+        <td class="ctr"><span class="priority-pill ${priorityClass(pr)}">${pr}</span></td>
+      </tr>`;
+  }).join('');
+
+  document.querySelector('#inv-main-table tbody').innerHTML = mainRowsHtml;
+  document.querySelector('#inv-main-table tfoot').innerHTML = `
+    <tr>
+      <td>Grand Total</td>
+      <td class="num">${fmtN(totalDead)}</td>
+      <td class="num">₹${totalDeadVal.toFixed(2)}</td>
+      <td class="num">${fmtN(totalSlow)}</td>
+      <td class="num">₹${totalSlowRev.toFixed(2)}</td>
+      <td class="num">${fmtN(totalDead+totalSlow)}</td>
+      <td class="ctr">—</td>
+    </tr>
+  `;
+
+  // === Brand drill-down ===
+  STATE._invBrandRows = brandRows;
+  populateInvSubFilter(brandRows);
+  renderInvBrandTable();
+}
+
+function populateInvSubFilter(rows){
+  const sel = document.getElementById('inv-filter-sub');
+  const mainSel = document.getElementById('inv-filter-main');
+  const mainVal = mainSel ? mainSel.value : 'ALL';
+  const subs = new Set();
+  for(const r of rows){
+    if(mainVal === 'ALL' || r.main === mainVal) subs.add(r.sub);
+  }
+  const current = sel.value;
+  const opts = ['<option value="ALL">All Sub-Groups</option>'];
+  [...subs].sort().forEach(s => opts.push(`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`));
+  sel.innerHTML = opts.join('');
+  if([...subs].includes(current)) sel.value = current;
+}
+
+function renderInvBrandTable(){
+  const rows = STATE._invBrandRows || [];
+  const mainVal = document.getElementById('inv-filter-main').value;
+  const subVal  = document.getElementById('inv-filter-sub').value;
+  const ageVal  = document.getElementById('inv-filter-age').value;
+  const filtered = rows.filter(r => {
+    if(mainVal !== 'ALL' && r.main !== mainVal) return false;
+    if(subVal  !== 'ALL' && r.sub  !== subVal)  return false;
+    if(ageVal !== 'ALL'){
+      const a = r.avgDeadAge;
+      if(ageVal === 'CRITICAL' && !(a != null && a >= 24)) return false;
+      if(ageVal === 'WARNING'  && !(a != null && a >= 12 && a < 24)) return false;
+      if(ageVal === 'NEW'      && !(a != null && a < 12)) return false;
+    }
+    return true;
+  });
+
+  // Filter to "significant" brands so the table doesn't get noisy
+  const meaningful = filtered.filter(r => r.total >= 5 || r.deadValLakh >= 0.1 || r.slowRevLakh >= 0.5);
+
+  const tb = document.querySelector('#inv-brand-table tbody');
+  const tf = document.querySelector('#inv-brand-table tfoot');
+  const cards = document.getElementById('inv-brand-cards');
+
+  if(!meaningful.length){
+    tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px">No brands match the current filters</td></tr>';
+    tf.innerHTML = '';
+    cards.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px">No brands match the current filters</div>';
+    return;
+  }
+
+  // Group visual: hide repeating main / sub
+  let prevMain = null, prevSub = null;
+  const ageBadge = (a) => {
+    if(a == null) return '<span class="age-badge age-grey">—</span>';
+    if(a >= 24) return `<span class="age-badge age-red">${a}</span>`;
+    if(a >= 12) return `<span class="age-badge age-gold">${a}</span>`;
+    return `<span class="age-badge age-green">${a}</span>`;
+  };
+
+  tb.innerHTML = meaningful.map(r => {
+    const showMain = r.main !== prevMain;
+    const showSub  = r.sub !== prevSub || showMain;
+    prevMain = r.main; prevSub = r.sub;
+    return `
+      <tr>
+        <td style="${showMain ? 'font-weight:600' : 'color:var(--line)'}">${escapeHtml(r.main)}</td>
+        <td style="${showSub ? 'font-weight:500' : 'color:var(--line)'}">${escapeHtml(r.sub)}</td>
+        <td>${escapeHtml(r.brand)}</td>
+        <td class="num">${r.total}</td>
+        <td class="num" style="color:${r.dead>0?'var(--accent)':'var(--muted)'};font-weight:${r.dead>0?'600':'400'}">${r.dead}</td>
+        <td class="num" style="color:${r.dead>0?'var(--accent)':'var(--muted)'};font-weight:${r.dead>0?'600':'400'}">${(r.deadPct*100).toFixed(0)}%</td>
+        <td class="ctr">${ageBadge(r.avgDeadAge)}</td>
+        <td class="num" style="font-weight:600">${r.deadValLakh.toFixed(2)}</td>
+        <td class="num" style="color:${r.slow>0?'#7a5e16':'var(--muted)'}">${r.slow>0?r.slow:'—'}</td>
+        <td class="num" style="color:var(--accent-2)">${r.slowRevLakh>0?r.slowRevLakh.toFixed(2):'—'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  // Footer totals
+  const t = meaningful.reduce((s,r)=>{
+    s.total += r.total; s.dead += r.dead; s.deadVal += r.deadValLakh;
+    s.slow += r.slow; s.slowRev += r.slowRevLakh;
+    if(r.avgDeadAge != null && r.dead > 0){ s.ageWS += r.avgDeadAge * r.dead; s.aD += r.dead; }
+    return s;
+  }, {total:0, dead:0, deadVal:0, slow:0, slowRev:0, ageWS:0, aD:0});
+  const tPct = t.total ? (t.dead/t.total*100).toFixed(0) : 0;
+  const tAge = t.aD ? Math.round(t.ageWS/t.aD) : null;
+  tf.innerHTML = `
+    <tr>
+      <td colspan="3">Grand Total (filtered)</td>
+      <td class="num">${t.total}</td>
+      <td class="num">${t.dead}</td>
+      <td class="num">${tPct}%</td>
+      <td class="ctr">${tAge==null?'—':tAge}</td>
+      <td class="num">${t.deadVal.toFixed(2)}</td>
+      <td class="num">${t.slow}</td>
+      <td class="num">${t.slowRev.toFixed(2)}</td>
+    </tr>
+  `;
+
+  // Mobile cards
+  let pm = null, ps = null;
+  const cardHtml = meaningful.map(r => {
+    const ageCls = r.avgDeadAge == null ? 'age-grey' : (r.avgDeadAge >= 24 ? 'age-red' : (r.avgDeadAge >= 12 ? 'age-gold' : 'age-green'));
+    return `
+      <div class="inv-brand-card">
+        <div class="bc-top">
+          <div>
+            <div class="bc-brand">${escapeHtml(r.brand)}</div>
+            <div class="bc-sub">${escapeHtml(r.main)} · ${escapeHtml(r.sub)}</div>
+          </div>
+          <span class="age-badge ${ageCls}" style="font-size:11px;padding:4px 9px">${r.avgDeadAge==null?'—':r.avgDeadAge+'m'}</span>
+        </div>
+        <div class="bc-stats">
+          <div class="bc-stat"><div class="bc-stat-label">Total</div><div class="bc-stat-val">${r.total}</div></div>
+          <div class="bc-stat"><div class="bc-stat-label">Dead</div><div class="bc-stat-val" style="color:var(--accent)">${r.dead}</div></div>
+          <div class="bc-stat"><div class="bc-stat-label">Dead %</div><div class="bc-stat-val" style="color:var(--accent)">${(r.deadPct*100).toFixed(0)}%</div></div>
+          <div class="bc-stat"><div class="bc-stat-label">Dead ₹L</div><div class="bc-stat-val">${r.deadValLakh.toFixed(2)}</div></div>
+          <div class="bc-stat"><div class="bc-stat-label">Slow</div><div class="bc-stat-val" style="color:#7a5e16">${r.slow>0?r.slow:'—'}</div></div>
+          <div class="bc-stat"><div class="bc-stat-label">Slow ₹L</div><div class="bc-stat-val" style="color:var(--accent-2)">${r.slowRevLakh>0?r.slowRevLakh.toFixed(2):'—'}</div></div>
+        </div>
+      </div>`;
+  }).join('');
+  // Mobile grand total at the end
+  const mobileTotal = `
+    <div class="inv-brand-mobile-total">
+      <div class="imt-label">Grand Total (filtered)</div>
+      <div class="imt-grid">
+        <div class="imt-cell">Total<strong>${t.total}</strong></div>
+        <div class="imt-cell">Dead<strong>${t.dead}</strong></div>
+        <div class="imt-cell">Dead %<strong>${tPct}%</strong></div>
+        <div class="imt-cell">Avg Age<strong>${tAge==null?'—':tAge+'m'}</strong></div>
+        <div class="imt-cell">Dead ₹L<strong>${t.deadVal.toFixed(2)}</strong></div>
+        <div class="imt-cell">Slow ₹L<strong>${t.slowRev.toFixed(2)}</strong></div>
+      </div>
+    </div>
+  `;
+  cards.innerHTML = cardHtml + mobileTotal;
+}
+
 
 function escapeHtml(s){
   if(s==null) return '';
