@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>iLab Inventory AnalysisDashboard</title>
+<title>PKO Sales · Dashboard</title>
 
 <!-- Fonts: editorial serif + utilitarian mono -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -398,7 +398,7 @@
 
 <header class="topbar">
   <div>
-    <div class="title">iLab Inventory Analysis <em>Dashboard</em></div>
+    <div class="title">Sales <em>Dashboard</em></div>
     
   </div>
   <div class="topbar-right">
@@ -485,16 +485,16 @@
         <div class="kpi">
           <div class="k-label">Fast Moving</div>
           <div class="k-value">
-            <span id="kpi-fast">—</span>
+            <span id="kpi-fast">—</span><span class="k-denom"> / <span id="kpi-active-total">—</span></span>
           </div>
-          <div class="k-unit">of <span id="kpi-active-total-label">—</span> used (&gt;5 projects)</div>
+          <div class="k-unit">&gt;5 projects, of used SKUs</div>
         </div>
         <div class="kpi k-blue">
           <div class="k-label">Slow Moving</div>
           <div class="k-value">
-            <span id="kpi-slow">—</span>
+            <span id="kpi-slow">—</span><span class="k-denom"> / <span id="kpi-active-total-2">—</span></span>
           </div>
-          <div class="k-unit">of <span id="kpi-active-total-label-2">—</span> used (≤5 projects)</div>
+          <div class="k-unit">≤5 projects, of used SKUs</div>
         </div>
       </div>
 
@@ -539,6 +539,7 @@
           <div class="tab" data-tab="slow">Slow Moving <span class="tab-count" id="cnt-slow">0</span></div>
           <div class="tab" data-tab="discontinued">Discontinued <span class="tab-count" id="cnt-discontinued">0</span></div>
           <div class="tab" data-tab="ec">EC Inventory <span class="tab-count" id="cnt-ec">0</span></div>
+          <div class="tab" data-tab="brand">Brand Analysis <span class="tab-count" id="cnt-brand">0</span></div>
         </div>
 
         <div id="tab-dead" class="tab-pane">
@@ -670,6 +671,45 @@
             </table>
           </div>
         </div>
+
+        <div id="tab-brand" class="tab-pane" style="display:none">
+          <div class="tab-actions">
+            <div>
+              <h2 style="margin:0 0 4px">Brand Analysis · dead stock by Sub-Category &amp; Brand</h2>
+              <div class="card-sub">total vs dead vs slow · with average age of dead SKUs</div>
+            </div>
+            <button class="download-btn" data-dl="brand">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 12l-4-4h3V2h2v6h3l-4 4zm-6 4v2h12v-2H4z"/></svg>
+              Download CSV
+            </button>
+          </div>
+          <div class="card-sub" style="margin-top:-4px;margin-bottom:12px">
+            Avg Age = months since dead SKUs were created in Studio.
+            <span style="color:var(--accent)">Red ≥ 24m</span> ·
+            <span style="color:#7a5e16">Gold 12-24m</span> ·
+            <span style="color:var(--accent-2)">Green &lt; 12m</span>
+          </div>
+          <div class="scroll-table" style="max-height:560px">
+            <table id="tbl-brand">
+              <thead>
+                <tr>
+                  <th>Main</th>
+                  <th>Sub-Category</th>
+                  <th>Brand</th>
+                  <th class="num">Total</th>
+                  <th class="num">Dead</th>
+                  <th class="num">Dead %</th>
+                  <th class="num">Avg Age (mo)</th>
+                  <th class="num">Dead Value (₹L)</th>
+                  <th class="num">Slow</th>
+                  <th class="num">Slow Rev (₹L)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+              <tfoot></tfoot>
+            </table>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -789,6 +829,79 @@ function canonicalCategory(raw){
   if(!raw) return null;
   const k = String(raw).trim().toLowerCase().replace(/\s+/g,' ').replace(/\.+$/,'');
   return CATEGORY_CANONICAL_MAP.get(k) || null;
+}
+
+/* ——— Sub-Category bucketing ———
+   Maps each Studio SKU into a curated Main → Sub-Category bucket per CDO spec.
+   Used by the Brand Analysis tab. Returns {main, sub} or null if no bucket fits.
+   The order of checks matters — each SKU goes into the FIRST bucket it matches. */
+function subCategoryOf(row){
+  const cat = (row.category || row.categoryRaw || '').toLowerCase();
+  const brand = (row.brand || '').toLowerCase();
+  const bpt = row.backendType;
+  // Helper: does category contain any of these keywords?
+  const has = (...kws) => kws.some(k => cat.includes(k.toLowerCase()));
+
+  // Beading: override main to Service per CDO request
+  if(has('beading')) return {main:'Service', sub:'Beading'};
+
+  if(bpt === 'type_modular'){
+    if(has('laminate')) return {main:'Modular', sub:'Laminates (all brands)'};
+    if(has('edgebanding')) return {main:'Modular', sub:'Edgebanding'};
+    if(has('membrane shutter')) return {main:'Modular', sub:'Membrane Shutters'};
+    if(has('carpentry')) return {main:'Modular', sub:'Carpentry items'};
+    if(has('pu finish')) return {main:'Modular', sub:'PU Finish'};
+    if(has('aluminium profile shutter','crystal acrylic','acrylic','profile handles','groove shutters','acrylic sheet'))
+      return {main:'Modular', sub:'Aluminium / Acrylic / Profile shutters'};
+    if(has('board','panel')) return {main:'Modular', sub:'Boards / Panels'};
+    if(has('hardware')) return {main:'Modular', sub:'Hardware'};
+    if(has('accessor')) return {main:'Modular', sub:'Accessories'};
+    if(has('membrane finish','bed','service','wallpaper'))
+      return {main:'Modular', sub:'Misc Modular (Membrane Finish, Bed)'};
+    return {main:'Modular', sub:'Other Modular'};
+  }
+
+  if(bpt === 'type_neo_modular'){
+    if(has('wardrobe accessor')) return {main:'Neo Modular', sub:'Wardrobe Accessories'};
+    if(has('aluminium profile shutter','aluminum profile partition','aristo shutter','glass partition'))
+      return {main:'Neo Modular', sub:'Aluminium Profile Shutters & Partitions'};
+    if(has('kitchen accessor','kitchen hardware'))
+      return {main:'Neo Modular', sub:'Kitchen Accessories (all)'};
+    if(has('handle')) return {main:'Neo Modular', sub:'Handles (incl. Profile, GK, Sujin)'};
+    if(has('glass & mirror','imported glass')) return {main:'Neo Modular', sub:'Glass & Mirror'};
+    if(has('hardware')) return {main:'Neo Modular', sub:'Hardware'};
+    return {main:'Neo Modular', sub:'Other Neo Modular'};
+  }
+
+  if(bpt === 'type_bonito_studio'){
+    if(has('bed','sofa','chair','table','loose furniture','recliner','ottoman','cot','bench','console','dining','headboard','storage unit','pooja unit','bar closet'))
+      return {main:'Studio', sub:'Loose Furniture (Beds, Sofas, Tables, Chairs)'};
+    if(has('chimney','sink','hob','cooktop','dishwasher','oven','microwave','inbuilt','appliance','home automation'))
+      return {main:'Studio', sub:'Appliances'};
+    if(has('wallpaper')) return {main:'Studio', sub:'Wallpaper'};
+    if(has('wall art')) return {main:'Studio', sub:'Wall Arts'};
+    if(has('rug')) return {main:'Studio', sub:'Rugs'};
+    if(has('light','lamp','bulb','mirror','pendant')) return {main:'Studio', sub:'Lights'};
+    if(has('quartz','granite')) return {main:'Studio', sub:'Quartz / Granite'};
+    if(has('wpc')) return {main:'Studio', sub:'WPC Rafters'};
+    if(has('handle')) return {main:'Studio', sub:'Handles'};
+    if(has('home decor','pots','planters')) return {main:'Studio', sub:'Home Decor'};
+    if(has('leg')) return {main:'Studio', sub:'Bonito Legs (tagged as Studio)'};
+    if(has('safety door','decorative door','designer glass')) return {main:'Studio', sub:'Doors'};
+    if(has('wooden flooring','ss strip')) return {main:'Studio', sub:'Flooring'};
+    if(has('offers')) return {main:'Studio', sub:'Offers (combos)'};
+    return {main:'Studio', sub:'Other Studio'};
+  }
+
+  if(bpt === 'type_service'){
+    if(has('paint')) return {main:'Service', sub:'Paints'};
+    if(has('electric','switchboard','point','light installation','board closing','fan point','removal of fitting'))
+      return {main:'Service', sub:'Electrical'};
+    if(has('cleaning')) return {main:'Service', sub:'Cleaning'};
+    if(has('civil','false ceiling','pop cornice')) return {main:'Service', sub:'Civil Works'};
+    return {main:'Service', sub:'Other Services (small categories)'};
+  }
+  return null;
 }
 
 /* ———  helpers ——— */
@@ -943,6 +1056,14 @@ async function init(){
       const mumSpNum = parseFloat(rawMum);
       const hasBngPrice = rawBng !== '' && !isNaN(bngSpNum) && bngSpNum > 0;
       const hasMumPrice = rawMum !== '' && !isNaN(mumSpNum) && mumSpNum > 0;
+      // Parse 'Created Date' — usually ISO like '2019-12-14 13:19:35 +0530'
+      // The Date constructor handles this format directly.
+      const rawCreated = (r['Created Date']||'').toString().trim();
+      let createdDate = null;
+      if(rawCreated){
+        const d = new Date(rawCreated.replace(' ','T'));
+        if(!isNaN(d.getTime())) createdDate = d;
+      }
       return {
         productId: r['Product ID'],
         productName: r['Product Name']||'',
@@ -959,6 +1080,8 @@ async function init(){
         city: r['City']||'',
         bngSp: hasBngPrice ? bngSpNum : 0,
         mumSp: hasMumPrice ? mumSpNum : 0,
+        bestPrice: hasBngPrice ? bngSpNum : (hasMumPrice ? mumSpNum : 0),
+        createdDate,
         status: r['Status']||'',
         onShopify: /^\s*yes\s*$/i.test(r['Shopify Products']||''),
       };
@@ -1186,6 +1309,7 @@ function buildFilters(){
         if(key==='dead') renderDeadTable(stale.dead);
         else if(key==='fast' || key==='slow') renderMovementTable('tbl-'+key, stale[key]);
         else if(key==='ec') renderECTable(stale.ec);
+        else if(key==='brand') renderBrandTable(stale.brand);
         // discontinued tab has no table render — just download button
         stale[key] = null;
       }
@@ -1459,9 +1583,9 @@ if(dcCount) dcCount.textContent = discontinued.length.toLocaleString();
   document.getElementById('kpi-dead').textContent       = fmtN(dead.length);
   document.getElementById('kpi-dead-total').textContent = fmtN(deadDenom);
   document.getElementById('kpi-fast').textContent       = fmtN(fast.length);
-  document.getElementById('kpi-active-total-label').textContent = fmtN(activeDenom);
+  document.getElementById('kpi-active-total').textContent = fmtN(activeDenom);
   document.getElementById('kpi-slow').textContent       = fmtN(slow.length);
-  document.getElementById('kpi-active-total-label-2').textContent = fmtN(activeDenom);
+  document.getElementById('kpi-active-total-2').textContent = fmtN(activeDenom);
 
   document.getElementById('cnt-dead').textContent = fmtN(dead.length);
   document.getElementById('cnt-fast').textContent = fmtN(fast.length);
@@ -1491,12 +1615,18 @@ if(dcCount) dcCount.textContent = discontinued.length.toLocaleString();
   document.getElementById('cnt-ec').textContent = fmtN(ecRows.length);
   document.getElementById('ec-window-label').textContent = 'window: ' + ecWindowLabel(STATE.ecWindow);
 
+  // Brand Analysis report — sub-category × brand rollup of dead/slow with age
+  const brandRows = computeBrandAnalysis(studio, sales);
+  STATE.lastBrand = brandRows;
+  document.getElementById('cnt-brand').textContent = fmtN(brandRows.length);
+
   // Only render the table for the CURRENTLY VISIBLE tab — saves ~50% table render time
   const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'dead';
   if(activeTab === 'dead') renderDeadTable(dead);
   else if(activeTab === 'fast') renderMovementTable('tbl-fast', fast);
   else if(activeTab === 'slow') renderMovementTable('tbl-slow', slow);
   else if(activeTab === 'ec') renderECTable(ecRows);
+  else if(activeTab === 'brand') renderBrandTable(brandRows);
   // discontinued tab has no table — count and download button update via main flow
   // Mark others as stale so they re-render on tab click
   STATE._staleTabs = {
@@ -1504,6 +1634,7 @@ if(dcCount) dcCount.textContent = discontinued.length.toLocaleString();
     fast: activeTab !== 'fast' ? fast : null,
     slow: activeTab !== 'slow' ? slow : null,
     ec: activeTab !== 'ec' ? ecRows : null,
+    brand: activeTab !== 'brand' ? brandRows : null,
   };
 
   console.log('[PKO] refresh:', (performance.now()-t0).toFixed(1), 'ms');
@@ -1994,6 +2125,161 @@ function ecWindowLabel(key){
   return ({'3m':'last 3 months','6m':'last 6 months','12m':'last 12 months','all':'all time'})[key] || 'last 6 months';
 }
 
+/* ——— Brand Analysis report ———
+   Aggregates filtered Studio rows into Main → Sub-Category → Brand buckets,
+   showing dead/slow counts, average dead-SKU age, and ₹ values in Lakhs.
+   Respects the global studio filters (brand/category/branch/Shopify). */
+function computeBrandAnalysis(studio, sales){
+  // Build sets we need for dead/slow classification
+  const salesErps = new Set();
+  const salesBaseErps = new Set();
+  for(let i=0;i<sales.length;i++){
+    const r = sales[i];
+    if(r.erp){ salesErps.add(r.erp); if(r.baseErp) salesBaseErps.add(r.baseErp); }
+  }
+  // Slow movers: aggregate per-ERP project counts within the date range
+  const projectsByErp = new Map();
+  const revenueByErp = new Map();
+  for(let i=0;i<sales.length;i++){
+    const r = sales[i];
+    if(!r.erp) continue;
+    let p = projectsByErp.get(r.erp);
+    if(!p){ p = new Set(); projectsByErp.set(r.erp, p); }
+    p.add(r.projectNo);
+    revenueByErp.set(r.erp, (revenueByErp.get(r.erp)||0) + r.amount);
+  }
+  const slowErps = new Set();
+  projectsByErp.forEach((projs, erp) => {
+    if(projs.size >= 1 && projs.size <= 5) slowErps.add(erp);
+  });
+
+  // Aggregate by (main, sub, brand)
+  const now = STATE._dateMax || new Date();
+  const map = new Map();   // key = main|sub|brand
+  for(let i=0;i<studio.length;i++){
+    const s = studio[i];
+    if(!s.erp || s.isLogicVariant || !s.hasPrice) continue;
+    const sc = subCategoryOf(s);
+    if(!sc) continue;
+    const isDead = !salesErps.has(s.erp) && !salesBaseErps.has(s.baseErp);
+    const isSlow = slowErps.has(s.erp);
+    const brand = s.brand || '(no brand)';
+    const key = sc.main + '|' + sc.sub + '|' + brand;
+    let agg = map.get(key);
+    if(!agg){
+      agg = {
+        main: sc.main, sub: sc.sub, brand,
+        total: 0, dead: 0, deadValSum: 0,
+        deadAgeSum: 0, deadAgeCount: 0,
+        slow: 0, slowRevSum: 0,
+      };
+      map.set(key, agg);
+    }
+    agg.total++;
+    if(isDead){
+      agg.dead++;
+      agg.deadValSum += s.bestPrice || 0;
+      if(s.createdDate){
+        const ageMonths = (now - s.createdDate) / (1000*60*60*24*30.44);
+        agg.deadAgeSum += ageMonths;
+        agg.deadAgeCount++;
+      }
+    }
+    if(isSlow){
+      agg.slow++;
+      agg.slowRevSum += revenueByErp.get(s.erp) || 0;
+    }
+  }
+
+  // Materialize, sort
+  const rows = [];
+  map.forEach(a => {
+    rows.push({
+      main: a.main, sub: a.sub, brand: a.brand,
+      total: a.total, dead: a.dead,
+      deadPct: a.total ? a.dead/a.total : 0,
+      avgDeadAge: a.deadAgeCount ? Math.round(a.deadAgeSum/a.deadAgeCount) : null,
+      deadValLakh: a.deadValSum / 1e5,
+      slow: a.slow,
+      slowRevLakh: a.slowRevSum / 1e5,
+    });
+  });
+  // Sort: by Main (Modular, Neo Modular, Studio, Service order), then sub by total dead value desc, then brand by total desc
+  const MAIN_ORDER = {'Modular':0,'Neo Modular':1,'Studio':2,'Service':3};
+  // Compute per-sub dead value for ordering sub-cats
+  const subDeadVal = new Map();
+  rows.forEach(r => {
+    const k = r.main + '|' + r.sub;
+    subDeadVal.set(k, (subDeadVal.get(k)||0) + r.deadValLakh);
+  });
+  rows.sort((a,b) => {
+    const ma = MAIN_ORDER[a.main] ?? 99;
+    const mb = MAIN_ORDER[b.main] ?? 99;
+    if(ma !== mb) return ma - mb;
+    const sva = subDeadVal.get(a.main+'|'+a.sub) || 0;
+    const svb = subDeadVal.get(b.main+'|'+b.sub) || 0;
+    if(sva !== svb) return svb - sva;   // higher dead val first
+    return b.total - a.total;
+  });
+  return rows;
+}
+
+function renderBrandTable(rows){
+  const tb = document.querySelector('#tbl-brand tbody');
+  const tf = document.querySelector('#tbl-brand tfoot');
+  if(!rows.length){
+    tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px">No brand data — try widening filters</td></tr>';
+    tf.innerHTML = '';
+    return;
+  }
+  // Track main/sub for visual grouping
+  let prevMain = null, prevSub = null;
+  const ageColor = m => m == null ? 'var(--muted)' : (m >= 24 ? 'var(--accent)' : (m >= 12 ? '#7a5e16' : 'var(--accent-2)'));
+  const mainColor = m => ({'Modular':'var(--accent)','Neo Modular':'#7a5e16','Studio':'var(--accent)','Service':'var(--accent-2)'}[m] || 'var(--ink)');
+
+  tb.innerHTML = rows.map(r => {
+    const showMain = r.main !== prevMain;
+    const showSub  = r.sub !== prevSub || showMain;
+    prevMain = r.main; prevSub = r.sub;
+    return `
+      <tr>
+        <td style="${showMain ? 'font-weight:600;color:'+mainColor(r.main) : 'color:var(--line)'}">${escapeHtml(r.main)}</td>
+        <td style="${showSub ? 'font-weight:500' : 'color:var(--line)'}">${escapeHtml(r.sub)}</td>
+        <td>${escapeHtml(r.brand)}</td>
+        <td class="num">${r.total}</td>
+        <td class="num" style="color:${r.dead>0?'var(--accent)':'var(--muted)'};font-weight:${r.dead>0?'600':'400'}">${r.dead}</td>
+        <td class="num" style="color:${r.dead>0?'var(--accent)':'var(--muted)'};font-weight:${r.dead>0?'600':'400'}">${(r.deadPct*100).toFixed(0)}%</td>
+        <td class="num" style="color:${ageColor(r.avgDeadAge)};font-weight:600">${r.avgDeadAge==null?'—':r.avgDeadAge}</td>
+        <td class="num" style="font-weight:600">${r.deadValLakh.toFixed(2)}</td>
+        <td class="num" style="color:${r.slow>0?'#7a5e16':'var(--muted)'}">${r.slow>0?r.slow:'—'}</td>
+        <td class="num" style="color:var(--accent-2)">${r.slowRevLakh>0?r.slowRevLakh.toFixed(2):'—'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  // Grand total footer
+  const totals = rows.reduce((t,r)=>{
+    t.total += r.total; t.dead += r.dead; t.deadVal += r.deadValLakh;
+    t.slow += r.slow; t.slowRev += r.slowRevLakh;
+    if(r.avgDeadAge != null && r.dead > 0){ t.ageWeightedSum += r.avgDeadAge * r.dead; t.ageDead += r.dead; }
+    return t;
+  }, {total:0, dead:0, deadVal:0, slow:0, slowRev:0, ageWeightedSum:0, ageDead:0});
+  const totalPct = totals.total ? (totals.dead/totals.total*100).toFixed(0) : 0;
+  const avgAge = totals.ageDead ? Math.round(totals.ageWeightedSum/totals.ageDead) : null;
+  tf.innerHTML = `
+    <tr style="background:var(--paper-2);font-weight:600;border-top:2px solid var(--ink)">
+      <td colspan="3" style="padding:10px 8px">Grand Total</td>
+      <td class="num">${totals.total}</td>
+      <td class="num" style="color:var(--accent)">${totals.dead}</td>
+      <td class="num" style="color:var(--accent)">${totalPct}%</td>
+      <td class="num" style="color:${ageColor(avgAge)}">${avgAge==null?'—':avgAge}</td>
+      <td class="num">${totals.deadVal.toFixed(2)}</td>
+      <td class="num">${totals.slow}</td>
+      <td class="num" style="color:var(--accent-2)">${totals.slowRev.toFixed(2)}</td>
+    </tr>
+  `;
+}
+
 function escapeHtml(s){
   if(s==null) return '';
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2092,6 +2378,21 @@ function downloadCsv(which){
     rows
   );
   saveFile(`slow_moving_ec_report_${todayStamp()}_${STATE.ecWindow}.csv`, csv);
+} else if(which==='brand'){
+  const rows = (STATE.lastBrand||[]).map(r => [
+    r.main, r.sub, r.brand,
+    r.total, r.dead,
+    (r.deadPct*100).toFixed(0)+'%',
+    r.avgDeadAge==null ? '' : r.avgDeadAge,
+    r.deadValLakh.toFixed(2),
+    r.slow,
+    r.slowRevLakh.toFixed(2),
+  ]);
+  const csv = toCsv(
+    ['Main','Sub-Category','Brand','Total','Dead','Dead %','Avg Dead Age (months)','Dead Value (INR Lakhs)','Slow Movers','Slow Revenue (INR Lakhs)'],
+    rows
+  );
+  saveFile(`brand_analysis_${todayStamp()}.csv`, csv);
 }
 }
 
