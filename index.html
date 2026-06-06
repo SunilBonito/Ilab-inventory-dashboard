@@ -283,6 +283,25 @@
   }
   .inv-filters select:focus{outline:none;border-color:var(--ink)}
 
+  .inv-filter-actions{
+    display:flex;gap:10px;padding:10px 18px;background:var(--paper);
+    border-bottom:1px solid var(--line);flex-wrap:wrap;align-items:center;
+  }
+  .inv-btn-reset, .inv-btn-download{
+    display:inline-flex;align-items:center;gap:4px;
+    padding:7px 14px;border-radius:6px;font-family:inherit;font-size:12px;
+    font-weight:500;cursor:pointer;letter-spacing:.02em;
+    border:1px solid var(--line);background:var(--card);color:var(--ink);
+    transition:all .15s ease;
+  }
+  .inv-btn-reset:hover{background:var(--paper-2,#ece5d3);border-color:var(--ink)}
+  .inv-btn-download{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .inv-btn-download:hover{background:var(--accent);border-color:var(--accent)}
+  @media (max-width:720px){
+    .inv-filter-actions{padding:10px 14px}
+    .inv-btn-reset, .inv-btn-download{flex:1;justify-content:center;font-size:11px;padding:8px 10px}
+  }
+
   .age-badge{
     display:inline-block;padding:3px 8px;border-radius:4px;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;
   }
@@ -708,7 +727,6 @@
           <div class="tab" data-tab="slow">Slow Moving <span class="tab-count" id="cnt-slow">0</span></div>
           <div class="tab" data-tab="discontinued">Discontinued <span class="tab-count" id="cnt-discontinued">0</span></div>
           <div class="tab" data-tab="ec">EC Inventory <span class="tab-count" id="cnt-ec">0</span></div>
-          <div class="tab" data-tab="brand">Brand Analysis <span class="tab-count" id="cnt-brand">0</span></div>
         </div>
 
         <div id="tab-dead" class="tab-pane">
@@ -841,44 +859,7 @@
           </div>
         </div>
 
-        <div id="tab-brand" class="tab-pane" style="display:none">
-          <div class="tab-actions">
-            <div>
-              <h2 style="margin:0 0 4px">Brand Analysis · dead stock by Sub-Category &amp; Brand</h2>
-              <div class="card-sub">total vs dead vs slow · with average age of dead SKUs</div>
-            </div>
-            <button class="download-btn" data-dl="brand">
-              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 12l-4-4h3V2h2v6h3l-4 4zm-6 4v2h12v-2H4z"/></svg>
-              Download CSV
-            </button>
-          </div>
-          <div class="card-sub" style="margin-top:-4px;margin-bottom:12px">
-            Avg Age = months since dead SKUs were created in Studio.
-            <span style="color:var(--accent)">Red ≥ 24m</span> ·
-            <span style="color:#7a5e16">Gold 12-24m</span> ·
-            <span style="color:var(--accent-2)">Green &lt; 12m</span>
-          </div>
-          <div class="scroll-table" style="max-height:560px">
-            <table id="tbl-brand">
-              <thead>
-                <tr>
-                  <th>Main</th>
-                  <th>Sub-Category</th>
-                  <th>Brand</th>
-                  <th class="num">Total</th>
-                  <th class="num">Dead</th>
-                  <th class="num">Dead %</th>
-                  <th class="num">Avg Age (mo)</th>
-                  <th class="num">Dead Value (₹L)</th>
-                  <th class="num">Slow</th>
-                  <th class="num">Slow Rev (₹L)</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-              <tfoot></tfoot>
-            </table>
-          </div>
-        </div>
+        <div id="tab-brand" class="tab-pane" style="display:none"></div>
       </div>
 
       </div><!-- end #view-sales -->
@@ -1040,6 +1021,16 @@
                 <option value="NEW">Recent Additions (&lt;12 months)</option>
               </select>
             </div>
+          </div>
+          <div class="inv-filter-actions">
+            <button class="inv-btn-reset" id="inv-reset-btn" type="button">
+              <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" style="vertical-align:-2px;margin-right:4px"><path d="M10 3a7 7 0 1 0 6.93 6h-2.02A5 5 0 1 1 10 5v2.5l4-3.5-4-3.5V3z"/></svg>
+              Reset filters
+            </button>
+            <button class="inv-btn-download" id="inv-csv-btn" type="button">
+              <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" style="vertical-align:-2px;margin-right:4px"><path d="M10 12l-4-4h3V2h2v6h3l-4 4zm-6 4v2h12v-2H4z"/></svg>
+              Download CSV (filtered SKUs)
+            </button>
           </div>
           <div class="inv-brand-table-wrap">
             <table class="inv-table" id="inv-brand-table">
@@ -1698,7 +1689,6 @@ function buildFilters(){
         if(key==='dead') renderDeadTable(stale.dead);
         else if(key==='fast' || key==='slow') renderMovementTable('tbl-'+key, stale[key]);
         else if(key==='ec') renderECTable(stale.ec);
-        else if(key==='brand') renderBrandTable(stale.brand);
         // discontinued tab has no table render — just download button
         stale[key] = null;
       }
@@ -1757,6 +1747,22 @@ function buildFilters(){
       renderInvBrandTable();
     });
   });
+  // Reset all 3 inventory filters
+  const resetBtn = document.getElementById('inv-reset-btn');
+  if(resetBtn){
+    resetBtn.addEventListener('click', () => {
+      document.getElementById('inv-filter-main').value = 'ALL';
+      document.getElementById('inv-filter-sub').value  = 'ALL';
+      document.getElementById('inv-filter-age').value  = 'ALL';
+      populateInvSubFilter(STATE._invBrandRows || []);
+      renderInvBrandTable();
+    });
+  }
+  // CSV download — every SKU matching the active inventory filters
+  const csvBtn = document.getElementById('inv-csv-btn');
+  if(csvBtn){
+    csvBtn.addEventListener('click', () => downloadInventoryCsv());
+  }
 }
 
 // Programmatically set a filter value (used when clicking chart elements)
@@ -2036,10 +2042,9 @@ if(dcCount) dcCount.textContent = discontinued.length.toLocaleString();
   document.getElementById('cnt-ec').textContent = fmtN(ecRows.length);
   document.getElementById('ec-window-label').textContent = 'window: ' + ecWindowLabel(STATE.ecWindow);
 
-  // Brand Analysis report — sub-category × brand rollup of dead/slow with age
+  // Brand Analysis data — still computed because the Inventory Analysis view consumes it
   const brandRows = computeBrandAnalysis(studio, sales);
   STATE.lastBrand = brandRows;
-  document.getElementById('cnt-brand').textContent = fmtN(brandRows.length);
 
   // Inventory Analysis view — render only if it's active to save time
   if(STATE.activeView === 'inventory'){
@@ -2054,7 +2059,6 @@ if(dcCount) dcCount.textContent = discontinued.length.toLocaleString();
   else if(activeTab === 'fast') renderMovementTable('tbl-fast', fast);
   else if(activeTab === 'slow') renderMovementTable('tbl-slow', slow);
   else if(activeTab === 'ec') renderECTable(ecRows);
-  else if(activeTab === 'brand') renderBrandTable(brandRows);
   // discontinued tab has no table — count and download button update via main flow
   // Mark others as stale so they re-render on tab click
   STATE._staleTabs = {
@@ -2062,7 +2066,6 @@ if(dcCount) dcCount.textContent = discontinued.length.toLocaleString();
     fast: activeTab !== 'fast' ? fast : null,
     slow: activeTab !== 'slow' ? slow : null,
     ec: activeTab !== 'ec' ? ecRows : null,
-    brand: activeTab !== 'brand' ? brandRows : null,
   };
 
   console.log('[PKO] refresh:', (performance.now()-t0).toFixed(1), 'ms');
@@ -2883,10 +2886,12 @@ function renderInvBrandTable(){
     const showMain = r.main !== prevMain;
     const showSub  = r.sub !== prevSub || showMain;
     prevMain = r.main; prevSub = r.sub;
+    // Always show main + sub text in dark ink. Use font-weight to distinguish first
+    // occurrence (bold) vs repeats (normal). No more washed-out grey.
     return `
       <tr>
-        <td style="${showMain ? 'font-weight:600' : 'color:var(--line)'}">${escapeHtml(r.main)}</td>
-        <td style="${showSub ? 'font-weight:500' : 'color:var(--line)'}">${escapeHtml(r.sub)}</td>
+        <td style="color:var(--ink);font-weight:${showMain ? '600' : '400'}">${escapeHtml(r.main)}</td>
+        <td style="color:var(--ink);font-weight:${showSub ? '500' : '400'}">${escapeHtml(r.sub)}</td>
         <td>${escapeHtml(r.brand)}</td>
         <td class="num">${r.total}</td>
         <td class="num" style="color:${r.dead>0?'var(--accent)':'var(--muted)'};font-weight:${r.dead>0?'600':'400'}">${r.dead}</td>
@@ -2995,6 +3000,107 @@ function todayStamp(){
   const d = new Date();
   return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
 }
+
+/* Inventory CSV — every SKU matching the global filters AND the 3 inventory
+   drill filters (Main / Sub-Sourcing / Age Risk). Used by the Download CSV
+   button under "By Sub-Sourcing & Brand · with Age". */
+function downloadInventoryCsv(){
+  // 1. Apply the same global filters that govern the dashboard
+  const studio = applyStudioFilters(STATE.studio);
+  const sales  = applySalesFilters(STATE.sales);
+
+  // 2. Build sales-ERP indexes for dead/slow classification (same logic as
+  //    computeBrandAnalysis so the export is consistent with what's on screen)
+  const salesErps = new Set();
+  const salesBaseErps = new Set();
+  const projByErp = new Map();
+  const revByErp  = new Map();
+  for(const r of sales){
+    if(!r.erp) continue;
+    salesErps.add(r.erp);
+    if(r.baseErp) salesBaseErps.add(r.baseErp);
+    let p = projByErp.get(r.erp); if(!p){ p = new Set(); projByErp.set(r.erp, p); }
+    p.add(r.projectNo);
+    revByErp.set(r.erp, (revByErp.get(r.erp)||0) + r.amount);
+  }
+  const slowErps = new Set();
+  projByErp.forEach((projs, erp) => { if(projs.size >= 1 && projs.size <= 5) slowErps.add(erp); });
+
+  // 3. Read the 3 inventory drill filters
+  const mainVal = document.getElementById('inv-filter-main').value;
+  const subVal  = document.getElementById('inv-filter-sub').value;
+  const ageVal  = document.getElementById('inv-filter-age').value;
+  const now = new Date();
+
+  // 4. For every sellable SKU: classify, filter, and build a row
+  const rows = [];
+  for(const s of studio){
+    if(!s.erp || s.isLogicVariant || !s.hasPrice) continue;
+    const sc = subCategoryOf(s);
+    if(!sc) continue;
+    // Apply inv drill filters: Main and Sub-Sourcing
+    if(mainVal !== 'ALL' && sc.main !== mainVal) continue;
+    if(subVal  !== 'ALL' && sc.sub  !== subVal)  continue;
+
+    // Status: Dead vs Slow vs Active
+    const isDead = !salesErps.has(s.erp) && !salesBaseErps.has(s.baseErp);
+    const isSlow = !isDead && slowErps.has(s.erp);
+    const status = isDead ? 'Dead' : (isSlow ? 'Slow' : 'Active');
+
+    // Age in months from createdDate
+    let ageMonths = '';
+    if(s.createdDate){
+      ageMonths = ((now - s.createdDate) / (1000*60*60*24*30.44)).toFixed(1);
+    }
+
+    // Apply Age Risk filter (only applies to dead SKUs — that's how the on-screen filter works)
+    if(ageVal !== 'ALL'){
+      const a = parseFloat(ageMonths);
+      const aValid = !isNaN(a);
+      if(ageVal === 'CRITICAL' && !(aValid && a >= 24)) continue;
+      if(ageVal === 'WARNING'  && !(aValid && a >= 12 && a < 24)) continue;
+      if(ageVal === 'NEW'      && !(aValid && a < 12)) continue;
+    }
+
+    // Days since first appearance in sales (lastUsed could be added, but keeping CSV lean)
+    const created = s.createdDate ? s.createdDate.toISOString().slice(0,10) : '';
+    const projects = projByErp.get(s.erp) ? projByErp.get(s.erp).size : 0;
+    const revenue  = revByErp.get(s.erp) || 0;
+
+    rows.push([
+      sc.main,                                  // Main
+      sc.sub,                                   // Sub-Sourcing
+      s.brand || '',                            // Brand
+      s.category || s.categoryRaw || '',        // Category (canonical)
+      s.productName || '',                      // Product Name
+      s.variantName || '',                      // Variant Name
+      s.erp,                                    // ERP Code
+      s.bngSp || '',                            // BNG SP
+      s.mumSp || '',                            // MUM SP
+      s.city || '',                             // Location / City
+      created,                                  // Created Date
+      ageMonths,                                // Age (months)
+      status,                                   // Status
+      projects,                                 // Projects (PKO count)
+      revenue ? revenue.toFixed(2) : '0',       // Revenue (₹)
+      s.onShopify ? 'Yes' : 'No',               // On Shopify
+    ]);
+  }
+
+  const headers = [
+    'Main','Sub-Sourcing','Brand','Category','Product Name','Variant Name','ERP Code',
+    'BNG SP (₹)','MUM SP (₹)','Location','Created Date','Age (months)',
+    'Status','Projects','Revenue (₹)','On Shopify',
+  ];
+  // Build filter-suffix for filename so it's obvious what's in the file
+  const parts = [];
+  if(mainVal !== 'ALL') parts.push(mainVal.replace(/\s+/g,'_'));
+  if(subVal  !== 'ALL') parts.push(subVal.replace(/\s+/g,'_').slice(0,20));
+  if(ageVal  !== 'ALL') parts.push(ageVal.toLowerCase());
+  const suffix = parts.length ? '_' + parts.join('_') : '_all';
+  saveFile(`inventory_by_brand${suffix}_${todayStamp()}.csv`, toCsv(headers, rows));
+  console.log(`[PKO Dashboard] Exported ${rows.length} SKUs to CSV`);
+}
 function downloadCsv(which){
   const stamp = todayStamp();
   const shopifySet = STATE._shopifyErpSet || new Set();
@@ -3060,21 +3166,6 @@ function downloadCsv(which){
     rows
   );
   saveFile(`slow_moving_ec_report_${todayStamp()}_${STATE.ecWindow}.csv`, csv);
-} else if(which==='brand'){
-  const rows = (STATE.lastBrand||[]).map(r => [
-    r.main, r.sub, r.brand,
-    r.total, r.dead,
-    (r.deadPct*100).toFixed(0)+'%',
-    r.avgDeadAge==null ? '' : r.avgDeadAge,
-    r.deadValLakh.toFixed(2),
-    r.slow,
-    r.slowRevLakh.toFixed(2),
-  ]);
-  const csv = toCsv(
-    ['Main','Sub-Category','Brand','Total','Dead','Dead %','Avg Dead Age (months)','Dead Value (INR Lakhs)','Slow Movers','Slow Revenue (INR Lakhs)'],
-    rows
-  );
-  saveFile(`brand_analysis_${todayStamp()}.csv`, csv);
 }
 }
 
