@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>iLab Inventory · Dashboard</title>
+<title>ilab Inventory · Dashboard</title>
 
 <!-- Fonts: editorial serif + utilitarian mono -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -356,6 +356,132 @@
     .inv-panels{grid-template-columns:1fr}
   }
 
+  /* ——— Project Composition view styles ——— */
+  .pc-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:0 0 18px}
+  .pc-kpi{
+    background:var(--card);border:1px solid var(--line);padding:14px 16px 12px;
+    border-radius:8px;position:relative;overflow:hidden;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .pc-kpi:hover{transform:translateY(-2px);box-shadow:0 8px 24px -12px rgba(26,25,21,.15)}
+  .pc-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--ink)}
+  .pc-kpi.pc-k-mod::before{background:var(--accent)}
+  .pc-k-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px}
+  .pc-k-value{font-family:'Fraunces',serif;font-size:28px;font-weight:500;line-height:1.1;color:var(--ink);letter-spacing:-.01em}
+  .pc-k-unit{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px}
+
+  .pc-filterbar{
+    background:var(--card);border:1px solid var(--line);border-radius:8px;
+    padding:14px 16px;margin-bottom:18px;
+    display:grid;grid-template-columns:repeat(6,1fr) auto;gap:12px;align-items:end;
+  }
+  .pc-filterbar > div > label{display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:5px}
+  .pc-filterbar select, .pc-filterbar input[type="date"]{
+    width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:5px;
+    background:var(--card);font-family:inherit;font-size:12px;color:var(--ink);
+  }
+  .pc-filterbar select:focus, .pc-filterbar input:focus{outline:none;border-color:var(--ink)}
+  .pc-presets{display:flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+  .pc-presets button{
+    flex:1;border:0;background:var(--card);padding:7px 8px;font-family:inherit;font-size:11.5px;
+    cursor:pointer;border-right:1px solid var(--line);color:var(--muted);
+  }
+  .pc-presets button:last-child{border-right:0}
+  .pc-presets button.active{background:var(--ink);color:var(--paper);font-weight:600}
+  .pc-reset{
+    padding:8px 14px;border:1px solid var(--line);background:var(--card);
+    border-radius:5px;cursor:pointer;font-family:inherit;font-size:12px;color:var(--ink);
+    transition:all .15s ease;align-self:end;
+  }
+  .pc-reset:hover{background:var(--paper-2);border-color:var(--ink)}
+
+  .pc-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:18px}
+  .pc-card-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+  .pc-card-h h3{margin:0;font-size:14px;font-weight:600;color:var(--ink)}
+  .pc-card-sub{color:var(--muted);font-size:11px}
+  .pc-stack-bar{display:flex;height:36px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:var(--paper-2)}
+  .pc-stack-seg{display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:600;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px;transition:flex .25s ease}
+  .pc-stack-seg.mod{background:var(--accent)}
+  .pc-stack-seg.neo{background:#7a5e16}
+  .pc-stack-seg.stu{background:var(--accent-2)}
+  .pc-stack-seg.svc{background:#3b6086}
+  .pc-mix-legend{display:flex;gap:18px;margin-top:12px;flex-wrap:wrap;font-size:12px}
+  .pc-mix-legend span{display:flex;align-items:center;gap:6px;color:var(--ink)}
+  .pc-mix-legend i{width:11px;height:11px;border-radius:2px;display:inline-block;flex-shrink:0}
+  .pc-mix-legend .v{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:11px;margin-left:4px}
+
+  .pc-layout{display:grid;grid-template-columns:1fr 380px;gap:18px;margin-bottom:18px}
+  .pc-byloc, .pc-bytype{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px}
+  .pc-byloc h3, .pc-bytype h3{margin:0 0 12px;font-size:13px;font-weight:600;color:var(--ink)}
+  .pc-bd-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:11.5px}
+  .pc-bd-row:last-child{border:0}
+  .pc-bd-row .lbl{width:96px;flex-shrink:0;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pc-bd-row .bar{flex:1;display:flex;height:14px;border-radius:3px;overflow:hidden;border:1px solid var(--line);background:var(--paper-2)}
+  .pc-bd-row .bar > div{height:100%}
+  .pc-bd-row .total{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);width:72px;text-align:right;flex-shrink:0}
+
+  .pc-detail{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:28px}
+  .pc-detail-h{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);gap:12px;flex-wrap:wrap}
+  .pc-detail-h h3{margin:0;font-size:14px;font-weight:600;color:var(--ink)}
+  .pc-detail-sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .pc-detail-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .pc-search{
+    padding:7px 11px;border:1px solid var(--line);border-radius:5px;
+    font-family:inherit;font-size:12px;width:180px;background:var(--card);color:var(--ink);
+  }
+  .pc-search:focus{outline:none;border-color:var(--ink)}
+  .pc-btn{padding:7px 13px;border:1px solid var(--line);background:var(--card);border-radius:5px;cursor:pointer;font-family:inherit;font-size:11.5px;color:var(--ink);transition:all .15s ease;display:inline-flex;align-items:center;gap:3px}
+  .pc-btn:hover{background:var(--paper-2)}
+  .pc-btn-dark{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .pc-btn-dark:hover{background:var(--accent);border-color:var(--accent)}
+
+  .pc-tbl-wrap{overflow-x:auto;max-height:560px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .pc-tbl{width:100%;border-collapse:collapse;font-size:11.5px}
+  .pc-tbl th{position:sticky;top:0;background:var(--ink);color:var(--paper);padding:10px 8px;text-align:left;font-weight:600;letter-spacing:.04em;font-size:10.5px;text-transform:uppercase;z-index:2;border-bottom:0;white-space:nowrap}
+  .pc-tbl th.num{text-align:right}
+  .pc-tbl td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .pc-tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .pc-tbl tbody tr:hover{background:var(--paper-2)}
+  .pc-pid{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted)}
+  .pc-pval{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--ink)}
+  .pc-chip{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600;white-space:nowrap}
+  .pc-chip-loc{background:#f0eadb;color:var(--ink)}
+  .pc-chip-typ{background:#e0e8df;color:var(--accent-2)}
+  .pc-mini-stack{display:flex;width:120px;height:14px;border-radius:3px;overflow:hidden;border:1px solid var(--line);background:var(--paper-2)}
+  .pc-mini-stack > div{height:100%}
+  .pc-pct{font-family:'JetBrains Mono',monospace;font-size:10.5px;display:inline-block;width:36px;text-align:right}
+  .pc-pct.mod{color:var(--accent);font-weight:600}
+  .pc-pct.neo{color:#7a5e16;font-weight:600}
+  .pc-pct.stu{color:var(--accent-2);font-weight:600}
+  .pc-pct.svc{color:#3b6086;font-weight:600}
+  .pc-pct.zero{color:#c9c5bc;font-weight:400}
+  .pc-tfoot td{
+    padding:12px 8px;font-weight:700;background:var(--paper-2);color:var(--ink);
+    border-top:2px solid var(--ink);position:sticky;bottom:0;z-index:2;
+  }
+
+  @media (max-width:1100px){
+    .pc-kpis{grid-template-columns:repeat(2,1fr)}
+    .pc-filterbar{grid-template-columns:repeat(3,1fr);gap:10px}
+    .pc-reset{grid-column:span 3;width:100%}
+    .pc-layout{grid-template-columns:1fr}
+  }
+  @media (max-width:720px){
+    .pc-kpis{grid-template-columns:1fr 1fr;gap:10px}
+    .pc-k-value{font-size:22px}
+    .pc-filterbar{grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px}
+    .pc-reset{grid-column:span 2}
+    .pc-stack-seg{font-size:10px;padding:0 4px}
+    .pc-search{width:140px}
+    /* Hide some columns on phones */
+    .pc-tbl th:nth-child(2), .pc-tbl td:nth-child(2),
+    .pc-tbl th:nth-child(3), .pc-tbl td:nth-child(3){display:none}
+    .pc-tbl{font-size:11px}
+    .pc-tbl th, .pc-tbl td{padding:7px 5px;white-space:nowrap}
+    .pc-mini-stack{width:80px}
+    .pc-pct{width:30px;font-size:10px}
+  }
+
   /* KPI row — scrolls naturally with content (not sticky) */
   .kpis{
     display:grid;grid-template-columns:repeat(6,1fr);gap:14px;
@@ -580,7 +706,7 @@
 
 <header class="topbar">
   <div>
-    <div class="title">iLab Inventory Analysis <em>Dashboard</em></div>
+    <div class="title">Ilab Inventory Analysis <em>Dashboard</em></div>
     
   </div>
   <div class="topbar-right">
@@ -644,6 +770,7 @@
       <div class="view-toggle" role="tablist">
         <button id="vtoggle-sales" class="active" data-view="sales">Sales Dashboard</button>
         <button id="vtoggle-inventory" data-view="inventory">Inventory Analysis</button>
+        <button id="vtoggle-projcomp" data-view="projcomp">Project Composition</button>
       </div>
 
       <div id="view-sales">
@@ -1057,6 +1184,139 @@
 
       </div><!-- end #view-inventory -->
 
+      <div id="view-projcomp" style="display:none">
+        <section class="inv-section">
+          <div class="inv-section-title">Project Composition</div>
+          <div class="inv-section-sub">Per-PID product split · revenue mix across Modular, Neo Modular, Studio, Service</div>
+        </section>
+
+        <!-- KPI strip -->
+        <div class="pc-kpis">
+          <div class="pc-kpi">
+            <div class="pc-k-label">Total Projects</div>
+            <div class="pc-k-value" id="pc-kpi-projects">—</div>
+            <div class="pc-k-unit">PKOs in range</div>
+          </div>
+          <div class="pc-kpi">
+            <div class="pc-k-label">Total Project Value</div>
+            <div class="pc-k-value" id="pc-kpi-totalval">—</div>
+            <div class="pc-k-unit">across all PKOs</div>
+          </div>
+          <div class="pc-kpi">
+            <div class="pc-k-label">Avg Project Value</div>
+            <div class="pc-k-value" id="pc-kpi-avgval">—</div>
+            <div class="pc-k-unit">per PKO</div>
+          </div>
+          <div class="pc-kpi pc-k-mod">
+            <div class="pc-k-label">Modular share</div>
+            <div class="pc-k-value" id="pc-kpi-modshare">—</div>
+            <div class="pc-k-unit">of total project value</div>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <section class="pc-filterbar">
+          <div>
+            <label>Location</label>
+            <select id="pc-filter-location">
+              <option value="ALL">All locations</option>
+            </select>
+          </div>
+          <div>
+            <label>Project Type</label>
+            <select id="pc-filter-type">
+              <option value="ALL">All types</option>
+            </select>
+          </div>
+          <div>
+            <label>Category (Main)</label>
+            <select id="pc-filter-cat">
+              <option value="ALL">All categories</option>
+              <option value="Modular">Modular</option>
+              <option value="Neo Modular">Neo Modular</option>
+              <option value="Studio">Studio</option>
+              <option value="Service">Service</option>
+            </select>
+          </div>
+          <div>
+            <label>From</label>
+            <input type="date" id="pc-filter-from">
+          </div>
+          <div>
+            <label>To</label>
+            <input type="date" id="pc-filter-to">
+          </div>
+          <div>
+            <label>Quick</label>
+            <div class="pc-presets">
+              <button type="button" data-pc-preset="3m">3M</button>
+              <button type="button" data-pc-preset="6m">6M</button>
+              <button type="button" class="active" data-pc-preset="all">All</button>
+            </div>
+          </div>
+          <button type="button" id="pc-reset-btn" class="pc-reset">↺ Reset</button>
+        </section>
+
+        <!-- Headline stacked bar -->
+        <section class="pc-card">
+          <div class="pc-card-h">
+            <h3>Overall Product Type Mix · filtered total</h3>
+            <div class="pc-card-sub" id="pc-bar-sub">based on Project Value (₹) — load data to populate</div>
+          </div>
+          <div class="pc-stack-bar" id="pc-stack-bar"></div>
+          <div class="pc-mix-legend" id="pc-mix-legend"></div>
+        </section>
+
+        <!-- Two side-by-side breakdowns: Location + Project Type -->
+        <section class="pc-layout">
+          <div class="pc-byloc">
+            <h3>Location</h3>
+            <div id="pc-byloc-rows"></div>
+          </div>
+          <div class="pc-bytype">
+            <h3>Project Type</h3>
+            <div id="pc-bytype-rows"></div>
+          </div>
+        </section>
+
+        <!-- PID detail table -->
+        <section class="pc-detail">
+          <div class="pc-detail-h">
+            <div>
+              <h3>PID-level detail · Product split per project</h3>
+              <div class="pc-detail-sub" id="pc-detail-sub">— PKOs · each row shows that PID's product type split by revenue</div>
+            </div>
+            <div class="pc-detail-actions">
+              <input type="search" class="pc-search" id="pc-search" placeholder="Search PID...">
+              <button class="pc-btn pc-btn-dark" id="pc-csv-btn" type="button">
+                <svg viewBox="0 0 20 20" width="13" height="13" fill="currentColor" style="vertical-align:-2px;margin-right:4px"><path d="M10 12l-4-4h3V2h2v6h3l-4 4zm-6 4v2h12v-2H4z"/></svg>
+                Download CSV
+              </button>
+            </div>
+          </div>
+          <div class="pc-tbl-wrap">
+            <table class="pc-tbl">
+              <thead>
+                <tr>
+                  <th>PID</th>
+                  <th>Location</th>
+                  <th>Type</th>
+                  <th class="num">Project ₹</th>
+                  <th>Product Split</th>
+                  <th class="num">Mod</th>
+                  <th class="num">Neo</th>
+                  <th class="num">Stu</th>
+                  <th class="num">Svc</th>
+                </tr>
+              </thead>
+              <tbody id="pc-tbody"></tbody>
+              <tfoot id="pc-tfoot"></tfoot>
+            </table>
+          </div>
+        </section>
+
+      </div><!-- end #view-projcomp -->
+
     </div>
     <div id="error-container"></div>
   </section>
@@ -1422,6 +1682,11 @@ async function init(){
         categoryRecognized: canonicalCategory(r['Category']) !== null,
         brand: (r['Brand']||'').trim(),
         defaultCategory: (r['Default Category']||'').trim(),
+        // ——— Project-level fields (new columns added to Sales CSVs) ———
+        projectValue: parseFloat(String(r['Project Value']||'').replace(/[,\s]/g,'')) || 0,
+        projectType: (r['Project Type']||'').trim(),
+        // backendType from Sales 'Default Category' (e.g. type_modular, type_neo_modular, type_bonito_studio, type_service)
+        backendType: (r['Default Category']||'').trim(),
         isPid: isPid(r),
       };
     }).filter(r=>r.date);
@@ -1726,6 +1991,7 @@ function buildFilters(){
       document.querySelectorAll('.view-toggle button').forEach(b => b.classList.toggle('active', b === btn));
       document.getElementById('view-sales').style.display     = view === 'sales' ? '' : 'none';
       document.getElementById('view-inventory').style.display = view === 'inventory' ? '' : 'none';
+      document.getElementById('view-projcomp').style.display  = view === 'projcomp' ? '' : 'none';
       // If inventory view became active and data is stale, compute now
       if(view === 'inventory' && STATE._invStale){
         const studio = applyStudioFilters(STATE.studio);
@@ -1734,6 +2000,11 @@ function buildFilters(){
         STATE.lastBrand = brandRows;
         renderInventoryView(studio, sales, brandRows);
         STATE._invStale = false;
+      }
+      // Same for Project Composition
+      if(view === 'projcomp' && STATE._pcStale){
+        renderProjectComposition();
+        STATE._pcStale = false;
       }
     });
   });
@@ -1763,6 +2034,47 @@ function buildFilters(){
   if(csvBtn){
     csvBtn.addEventListener('click', () => downloadInventoryCsv());
   }
+
+  // ——— Project Composition view wiring ———
+  ['pc-filter-location','pc-filter-type','pc-filter-cat','pc-filter-from','pc-filter-to'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('change', renderProjectComposition);
+  });
+  // Quick presets (3M / 6M / All)
+  document.querySelectorAll('.pc-presets button[data-pc-preset]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.pc-presets button').forEach(b => b.classList.toggle('active', b === btn));
+      const preset = btn.dataset.pcPreset;
+      const dt = document.getElementById('pc-filter-to');
+      const df = document.getElementById('pc-filter-from');
+      const toISO = d => d.toISOString().slice(0,10);
+      const max = STATE._dateMax || new Date();
+      dt.value = toISO(max);
+      if(preset === '3m'){
+        df.value = toISO(new Date(max.getTime() - 90*24*3600*1000));
+      } else if(preset === '6m'){
+        df.value = toISO(new Date(max.getTime() - 182*24*3600*1000));
+      } else {
+        df.value = toISO(STATE._dateMin || max);
+      }
+      renderProjectComposition();
+    });
+  });
+  // Reset button
+  const pcReset = document.getElementById('pc-reset-btn');
+  if(pcReset) pcReset.addEventListener('click', pcResetFilters);
+  // Search input — debounce so we don't re-render on every keystroke
+  const pcSearch = document.getElementById('pc-search');
+  if(pcSearch){
+    let pcSearchTimer = null;
+    pcSearch.addEventListener('input', () => {
+      if(pcSearchTimer) clearTimeout(pcSearchTimer);
+      pcSearchTimer = setTimeout(() => pcRenderTable(STATE._pcProjects || []), 150);
+    });
+  }
+  // CSV download
+  const pcCsv = document.getElementById('pc-csv-btn');
+  if(pcCsv) pcCsv.addEventListener('click', pcDownloadCsv);
 }
 
 // Programmatically set a filter value (used when clicking chart elements)
@@ -2051,6 +2363,13 @@ if(dcCount) dcCount.textContent = discontinued.length.toLocaleString();
     renderInventoryView(studio, sales, brandRows);
   } else {
     STATE._invStale = true;
+  }
+
+  // Project Composition view — same lazy approach
+  if(STATE.activeView === 'projcomp'){
+    renderProjectComposition();
+  } else {
+    STATE._pcStale = true;
   }
 
   // Only render the table for the CURRENTLY VISIBLE tab — saves ~50% table render time
@@ -3100,6 +3419,360 @@ function downloadInventoryCsv(){
   const suffix = parts.length ? '_' + parts.join('_') : '_all';
   saveFile(`inventory_by_brand${suffix}_${todayStamp()}.csv`, toCsv(headers, rows));
   console.log(`[PKO Dashboard] Exported ${rows.length} SKUs to CSV`);
+}
+
+/* =========================================================
+   Project Composition view — per-PID product type mix
+   ========================================================= */
+
+/* Map a sales row's backendType (or, as fallback, the Studio dump's backendType
+   for that ERP) into one of the 4 canonical Main groups. Returns null if it
+   doesn't map cleanly so we can skip "Unknown" buckets. */
+const PC_BPT_MAP = {
+  'type_modular': 'Modular',
+  'type_neo_modular': 'Neo Modular',
+  'type_bonito_studio': 'Studio',
+  'type_service': 'Service',
+};
+
+/* For a sales row, resolve the Main group by:
+   1. Studio dump's backendType for this ERP (preferred — most accurate)
+   2. Sales row's own Default Category (backendType) as fallback */
+function pcResolveMain(row, studioMap){
+  // Try studio first (more reliable than the sales row's denormalized field)
+  const s = studioMap.get(row.erp);
+  if(s && s.backendType){
+    const m = PC_BPT_MAP[s.backendType];
+    if(m) return m;
+  }
+  // Fallback: sales row's Default Category
+  if(row.backendType){
+    const m = PC_BPT_MAP[row.backendType];
+    if(m) return m;
+  }
+  return null;  // unknown — won't be counted in the 4-way mix
+}
+
+/* Aggregate the filtered sales into per-PID summaries:
+   { projectNo, location, projectType, projectValue,
+     mod, neo, stu, svc (revenue ₹ per main group),
+     total (sum of those 4) }
+   Respects all global filters AND the projcomp filter bar. */
+function pcAggregate(){
+  // Apply global filters
+  let sales = applySalesFilters(STATE.sales);
+
+  // Apply projcomp filters
+  const locVal  = document.getElementById('pc-filter-location').value;
+  const typeVal = document.getElementById('pc-filter-type').value;
+  const catVal  = document.getElementById('pc-filter-cat').value;
+  const fromVal = document.getElementById('pc-filter-from').value;
+  const toVal   = document.getElementById('pc-filter-to').value;
+
+  if(locVal !== 'ALL')  sales = sales.filter(r => r.branch === locVal);
+  if(typeVal !== 'ALL') sales = sales.filter(r => r.projectType === typeVal);
+  if(fromVal){
+    const f = new Date(fromVal);
+    sales = sales.filter(r => r.date >= f);
+  }
+  if(toVal){
+    const t = new Date(toVal); t.setHours(23,59,59,999);
+    sales = sales.filter(r => r.date <= t);
+  }
+
+  // Build studio lookup map for category resolution
+  const studioMap = new Map();
+  for(const s of STATE.studio){
+    if(s.erp && !studioMap.has(s.erp)) studioMap.set(s.erp, s);
+  }
+
+  // Group by Project No
+  const byProject = new Map();
+  for(const r of sales){
+    if(!r.projectNo) continue;
+    let p = byProject.get(r.projectNo);
+    if(!p){
+      p = {
+        projectNo: r.projectNo,
+        location: r.branch,
+        projectType: r.projectType,
+        projectValue: r.projectValue,   // same on every row of the PKO
+        mod: 0, neo: 0, stu: 0, svc: 0,
+        total: 0,
+      };
+      byProject.set(r.projectNo, p);
+    }
+    // Take max projectValue (in case rows differ slightly)
+    if(r.projectValue > p.projectValue) p.projectValue = r.projectValue;
+    // Resolve main group; skip row if it can't be resolved
+    const main = pcResolveMain(r, studioMap);
+    if(!main) continue;
+    const amt = r.amount || 0;
+    if(main === 'Modular')     p.mod += amt;
+    else if(main === 'Neo Modular') p.neo += amt;
+    else if(main === 'Studio') p.stu += amt;
+    else if(main === 'Service') p.svc += amt;
+    p.total += amt;
+  }
+
+  let projects = [...byProject.values()];
+
+  // Apply Category filter — only keep projects where THIS group has at least 5% share
+  if(catVal !== 'ALL'){
+    projects = projects.filter(p => {
+      const cat = catVal === 'Modular' ? p.mod
+                : catVal === 'Neo Modular' ? p.neo
+                : catVal === 'Studio' ? p.stu
+                : catVal === 'Service' ? p.svc : 0;
+      return p.total > 0 && (cat / p.total) >= 0.05;
+    });
+  }
+
+  return projects;
+}
+
+function renderProjectComposition(){
+  // Populate filter dropdowns first (only once, or when data changes)
+  pcPopulateFilters();
+
+  const projects = pcAggregate();
+  STATE._pcProjects = projects;
+  pcRenderKPIs(projects);
+  pcRenderHeadlineBar(projects);
+  pcRenderBreakdowns(projects);
+  pcRenderTable(projects);
+}
+
+function pcPopulateFilters(){
+  if(STATE._pcFiltersPopulated) return;
+  // Location options from sales branches
+  const locs = [...new Set(STATE.sales.map(r => r.branch).filter(Boolean))].sort();
+  const locSel = document.getElementById('pc-filter-location');
+  for(const l of locs){
+    const opt = document.createElement('option');
+    opt.value = l; opt.textContent = l;
+    locSel.appendChild(opt);
+  }
+  // Project Type options
+  const types = [...new Set(STATE.sales.map(r => r.projectType).filter(Boolean))].sort();
+  const typeSel = document.getElementById('pc-filter-type');
+  for(const t of types){
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t;
+    typeSel.appendChild(opt);
+  }
+  // Date defaults from data range
+  if(STATE._dateMin && STATE._dateMax){
+    const toISO = d => d.toISOString().slice(0,10);
+    const df = document.getElementById('pc-filter-from');
+    const dt = document.getElementById('pc-filter-to');
+    df.min = dt.min = toISO(STATE._dateMin);
+    df.max = dt.max = toISO(STATE._dateMax);
+    df.value = toISO(STATE._dateMin);
+    dt.value = toISO(STATE._dateMax);
+  }
+  STATE._pcFiltersPopulated = true;
+}
+
+function pcRenderKPIs(projects){
+  const count = projects.length;
+  const totalVal = projects.reduce((s,p) => s + (p.projectValue || 0), 0);
+  const avgVal = count > 0 ? totalVal / count : 0;
+  // Modular share = total Modular revenue / total of all 4 categories revenue
+  const totalMod = projects.reduce((s,p) => s + p.mod, 0);
+  const totalAll = projects.reduce((s,p) => s + p.total, 0);
+  const modShare = totalAll > 0 ? (totalMod / totalAll * 100) : 0;
+
+  document.getElementById('pc-kpi-projects').textContent = count.toLocaleString('en-IN');
+  document.getElementById('pc-kpi-totalval').textContent = '₹' + (totalVal/1e7).toFixed(2) + ' Cr';
+  document.getElementById('pc-kpi-avgval').textContent   = '₹' + (avgVal/1e5).toFixed(2) + ' L';
+  document.getElementById('pc-kpi-modshare').textContent = modShare.toFixed(0) + '%';
+}
+
+function pcRenderHeadlineBar(projects){
+  const tot = projects.reduce((s,p) => ({
+    mod: s.mod + p.mod, neo: s.neo + p.neo, stu: s.stu + p.stu, svc: s.svc + p.svc,
+  }), {mod:0,neo:0,stu:0,svc:0});
+  const grand = tot.mod + tot.neo + tot.stu + tot.svc;
+  const bar = document.getElementById('pc-stack-bar');
+  if(grand <= 0){
+    bar.innerHTML = '<div style="padding:10px 16px;color:var(--muted);font-size:12px">No data in current selection</div>';
+    document.getElementById('pc-mix-legend').innerHTML = '';
+    document.getElementById('pc-bar-sub').textContent = 'no PKOs match the filters';
+    return;
+  }
+  const pct = v => (v/grand*100);
+  const seg = (cls, val) => {
+    const p = pct(val);
+    if(p < 0.5) return '';
+    return `<div class="pc-stack-seg ${cls}" style="flex:${p.toFixed(2)}">${({
+      mod:'Modular',neo:'Neo',stu:'Studio',svc:'Service'
+    })[cls]} ${p.toFixed(0)}%</div>`;
+  };
+  bar.innerHTML = seg('mod', tot.mod) + seg('neo', tot.neo) + seg('stu', tot.stu) + seg('svc', tot.svc);
+
+  const fmt = v => '₹' + (v/1e7).toFixed(2) + ' Cr';
+  document.getElementById('pc-mix-legend').innerHTML = `
+    <span><i style="background:var(--accent)"></i> Modular <span class="v">${fmt(tot.mod)}</span></span>
+    <span><i style="background:#7a5e16"></i> Neo Modular <span class="v">${fmt(tot.neo)}</span></span>
+    <span><i style="background:var(--accent-2)"></i> Studio <span class="v">${fmt(tot.stu)}</span></span>
+    <span><i style="background:#3b6086"></i> Service <span class="v">${fmt(tot.svc)}</span></span>
+  `;
+  document.getElementById('pc-bar-sub').textContent = `based on Project Value (₹) across ${projects.length.toLocaleString('en-IN')} PKOs`;
+}
+
+function pcRenderBreakdowns(projects){
+  const renderGroup = (containerId, keyFn) => {
+    const groups = new Map();
+    for(const p of projects){
+      const k = keyFn(p) || '(blank)';
+      let g = groups.get(k);
+      if(!g){ g = {mod:0,neo:0,stu:0,svc:0,total:0}; groups.set(k,g); }
+      g.mod += p.mod; g.neo += p.neo; g.stu += p.stu; g.svc += p.svc; g.total += p.total;
+    }
+    const rows = [...groups.entries()].sort((a,b) => b[1].total - a[1].total).slice(0,8);
+    const el = document.getElementById(containerId);
+    if(rows.length === 0){
+      el.innerHTML = '<div style="color:var(--muted);font-size:11.5px;padding:8px 0">No data</div>';
+      return;
+    }
+    el.innerHTML = rows.map(([k, g]) => {
+      const total = g.total || 1;
+      const w = v => (v/total*100).toFixed(2) + '%';
+      const fmt = v => '₹' + (v/1e7).toFixed(1) + ' Cr';
+      return `
+        <div class="pc-bd-row">
+          <span class="lbl" title="${escapeHtml(k)}">${escapeHtml(k)}</span>
+          <div class="bar">
+            <div style="background:var(--accent);width:${w(g.mod)}"></div>
+            <div style="background:#7a5e16;width:${w(g.neo)}"></div>
+            <div style="background:var(--accent-2);width:${w(g.stu)}"></div>
+            <div style="background:#3b6086;width:${w(g.svc)}"></div>
+          </div>
+          <span class="total">${fmt(g.total)}</span>
+        </div>
+      `;
+    }).join('');
+  };
+  renderGroup('pc-byloc-rows',  p => p.location);
+  renderGroup('pc-bytype-rows', p => p.projectType);
+}
+
+function pcRenderTable(projects){
+  // Sort by project value desc
+  let display = [...projects].sort((a,b) => (b.projectValue || 0) - (a.projectValue || 0));
+  // Apply search filter
+  const q = (document.getElementById('pc-search')?.value || '').trim().toLowerCase();
+  if(q){
+    display = display.filter(p => String(p.projectNo).toLowerCase().includes(q));
+  }
+  // Limit rendered rows for performance — show top 500
+  const SHOW_LIMIT = 500;
+  const shown = display.slice(0, SHOW_LIMIT);
+
+  document.getElementById('pc-detail-sub').textContent =
+    `${display.length.toLocaleString('en-IN')} PKO${display.length===1?'':'s'} · showing top ${shown.length.toLocaleString('en-IN')} by Project Value · each row shows that PID's product split by revenue`;
+
+  const tb = document.getElementById('pc-tbody');
+  if(shown.length === 0){
+    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">No PKOs match the filters</td></tr>';
+    document.getElementById('pc-tfoot').innerHTML = '';
+    return;
+  }
+
+  tb.innerHTML = shown.map(p => {
+    const total = p.total || 1;
+    const pct = v => (v/total*100);
+    const fmtPct = (cls, v) => {
+      const x = pct(v);
+      if(x < 0.5) return `<span class="pc-pct zero">0%</span>`;
+      return `<span class="pc-pct ${cls}">${x.toFixed(0)}%</span>`;
+    };
+    const w = v => (v/total*100).toFixed(2) + '%';
+    // PID — handle blank/zero values
+    const pidLabel = p.projectNo ? String(p.projectNo) : '(no PID)';
+    const locChip = p.location ? `<span class="pc-chip pc-chip-loc">${escapeHtml(p.location)}</span>` : '—';
+    const typeChip = p.projectType ? `<span class="pc-chip pc-chip-typ">${escapeHtml(p.projectType)}</span>` : '—';
+    const pVal = p.projectValue > 0 ? '₹' + p.projectValue.toLocaleString('en-IN') : '—';
+    return `
+      <tr>
+        <td><span class="pc-pid">${escapeHtml(pidLabel)}</span></td>
+        <td>${locChip}</td>
+        <td>${typeChip}</td>
+        <td class="num pc-pval">${pVal}</td>
+        <td>
+          <div class="pc-mini-stack">
+            <div style="background:var(--accent);width:${w(p.mod)}"></div>
+            <div style="background:#7a5e16;width:${w(p.neo)}"></div>
+            <div style="background:var(--accent-2);width:${w(p.stu)}"></div>
+            <div style="background:#3b6086;width:${w(p.svc)}"></div>
+          </div>
+        </td>
+        <td class="num">${fmtPct('mod', p.mod)}</td>
+        <td class="num">${fmtPct('neo', p.neo)}</td>
+        <td class="num">${fmtPct('stu', p.stu)}</td>
+        <td class="num">${fmtPct('svc', p.svc)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  // Grand total footer reflects ALL filtered projects (not just shown)
+  const t = display.reduce((s,p) => ({
+    mod: s.mod+p.mod, neo: s.neo+p.neo, stu: s.stu+p.stu, svc: s.svc+p.svc,
+    pval: s.pval + (p.projectValue || 0),
+  }), {mod:0,neo:0,stu:0,svc:0,pval:0});
+  const grand = t.mod + t.neo + t.stu + t.svc;
+  const pctG = v => grand > 0 ? (v/grand*100).toFixed(0)+'%' : '—';
+  document.getElementById('pc-tfoot').innerHTML = `
+    <tr class="pc-tfoot">
+      <td colspan="3">Grand Total · ${display.length.toLocaleString('en-IN')} PKOs</td>
+      <td class="num pc-pval">₹${t.pval.toLocaleString('en-IN')}</td>
+      <td>
+        <div class="pc-mini-stack" style="width:120px">
+          <div style="background:var(--accent);width:${grand>0?(t.mod/grand*100).toFixed(2):0}%"></div>
+          <div style="background:#7a5e16;width:${grand>0?(t.neo/grand*100).toFixed(2):0}%"></div>
+          <div style="background:var(--accent-2);width:${grand>0?(t.stu/grand*100).toFixed(2):0}%"></div>
+          <div style="background:#3b6086;width:${grand>0?(t.svc/grand*100).toFixed(2):0}%"></div>
+        </div>
+      </td>
+      <td class="num"><span class="pc-pct mod">${pctG(t.mod)}</span></td>
+      <td class="num"><span class="pc-pct neo">${pctG(t.neo)}</span></td>
+      <td class="num"><span class="pc-pct stu">${pctG(t.stu)}</span></td>
+      <td class="num"><span class="pc-pct svc">${pctG(t.svc)}</span></td>
+    </tr>
+  `;
+}
+
+function pcResetFilters(){
+  document.getElementById('pc-filter-location').value = 'ALL';
+  document.getElementById('pc-filter-type').value = 'ALL';
+  document.getElementById('pc-filter-cat').value = 'ALL';
+  if(STATE._dateMin && STATE._dateMax){
+    const toISO = d => d.toISOString().slice(0,10);
+    document.getElementById('pc-filter-from').value = toISO(STATE._dateMin);
+    document.getElementById('pc-filter-to').value = toISO(STATE._dateMax);
+  }
+  document.querySelectorAll('.pc-presets button').forEach(b => b.classList.toggle('active', b.dataset.pcPreset === 'all'));
+  document.getElementById('pc-search').value = '';
+  renderProjectComposition();
+}
+
+function pcDownloadCsv(){
+  const projects = STATE._pcProjects || [];
+  const headers = ['PID','Location','Project Type','Project Value (₹)','Total Spend (₹)','Modular (₹)','Modular %','Neo Modular (₹)','Neo Modular %','Studio (₹)','Studio %','Service (₹)','Service %'];
+  const rows = projects.map(p => {
+    const total = p.total || 1;
+    const pct = v => total > 0 ? (v/total*100).toFixed(1) : '0';
+    return [
+      p.projectNo || '', p.location || '', p.projectType || '',
+      p.projectValue || 0, Math.round(p.total),
+      Math.round(p.mod), pct(p.mod) + '%',
+      Math.round(p.neo), pct(p.neo) + '%',
+      Math.round(p.stu), pct(p.stu) + '%',
+      Math.round(p.svc), pct(p.svc) + '%',
+    ];
+  });
+  saveFile(`project_composition_${todayStamp()}.csv`, toCsv(headers, rows));
 }
 function downloadCsv(which){
   const stamp = todayStamp();
