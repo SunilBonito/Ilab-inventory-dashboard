@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Ilab Inventory · Dashboard</title>
+<title>iLab Inventory · Dashboard</title>
 
 <!-- Fonts: editorial serif + utilitarian mono -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -715,7 +715,7 @@
 
 <header class="topbar">
   <div>
-    <div class="title">Ilab Inventory Analysis <em>Dashboard</em></div>
+    <div class="title">iLab Inventory Analysis <em>Dashboard</em></div>
     
   </div>
   <div class="topbar-right">
@@ -1228,7 +1228,9 @@
           </div>
         </div>
         <div class="pc-method-note">
-          <strong>How shares are calculated:</strong> for each PKO, we sum the line-item revenue (Amount ₹) per Main category (Modular / Neo Modular / Studio / Service), then divide by that PKO's total line-item revenue. Project Value column is used only for the Avg Project Value KPI.
+          <strong>How shares are calculated:</strong> for each PKO, we count the number of line items per Main category (Modular / Neo Modular / Studio / Service), then divide by that PKO's total line items.
+          <br>
+          <span style="color:var(--muted)">Example: a project with 80 Modular line items + 10 Studio + 5 Neo Modular + 5 Service = 100 total → Modular 80%, Studio 10%, Neo 5%, Service 5%. We use item count (not revenue) so a small number of expensive items doesn't skew the picture. Project Value is shown only as project size context.</span>
         </div>
 
         <!-- Filter bar -->
@@ -1320,10 +1322,10 @@
                   <th>Type</th>
                   <th class="num">Project ₹</th>
                   <th>Product Split</th>
-                  <th class="num">Modular</th>
-                  <th class="num">NeoModular</th>
-                  <th class="num">Studio</th>
-                  <th class="num">Service</th>
+                  <th class="num">Mod</th>
+                  <th class="num">Neo</th>
+                  <th class="num">Stu</th>
+                  <th class="num">Svc</th>
                 </tr>
               </thead>
               <tbody id="pc-tbody"></tbody>
@@ -1340,7 +1342,9 @@
 </main>
 
 <script>
-
+/* =========================================================
+   PKO Sales Dashboard — single-file, GitHub-Pages friendly
+   ========================================================= */
 
 const SALES_FILE  = 'Sales_PKO.csv';
 const STUDIO_FILE = 'Studio_Dump_for_PKO_Sales.csv';
@@ -3502,6 +3506,16 @@ function pcAggregate(){
   }
 
   // Group by Project No
+  //
+  // Two separate per-PKO tallies are maintained:
+  //
+  // 1. CATEGORY MIX (mod/neo/stu/svc + total) — counts of LINE ITEMS.
+  //    Per Neelam's framing: "what % of the products used in this PKO were
+  //    Modular vs Studio vs Service?" — line-item count, not revenue.
+  //
+  // 2. REVENUE (revMod / revNeo / revStu / revSvc / revTotal) — sum of Amount.
+  //    Used by the location KPIs and revenue context in tooltips. Not used in
+  //    the % math.
   const byProject = new Map();
   for(const r of sales){
     if(!r.projectNo) continue;
@@ -3512,8 +3526,10 @@ function pcAggregate(){
         location: r.branch,
         projectType: r.projectType,
         projectValue: r.projectValue,   // same on every row of the PKO
-        mod: 0, neo: 0, stu: 0, svc: 0,
-        total: 0,
+        // category mix — by LINE-ITEM COUNT
+        mod: 0, neo: 0, stu: 0, svc: 0, total: 0,
+        // category revenue — kept for KPIs and CSV context
+        revMod: 0, revNeo: 0, revStu: 0, revSvc: 0, revTotal: 0,
       };
       byProject.set(r.projectNo, p);
     }
@@ -3523,11 +3539,12 @@ function pcAggregate(){
     const main = pcResolveMain(r, studioMap);
     if(!main) continue;
     const amt = r.amount || 0;
-    if(main === 'Modular')     p.mod += amt;
-    else if(main === 'Neo Modular') p.neo += amt;
-    else if(main === 'Studio') p.stu += amt;
-    else if(main === 'Service') p.svc += amt;
-    p.total += amt;
+    if(main === 'Modular')     { p.mod++; p.revMod += amt; }
+    else if(main === 'Neo Modular') { p.neo++; p.revNeo += amt; }
+    else if(main === 'Studio') { p.stu++; p.revStu += amt; }
+    else if(main === 'Service') { p.svc++; p.revSvc += amt; }
+    p.total++;
+    p.revTotal += amt;
   }
 
   let projects = [...byProject.values()];
@@ -3614,7 +3631,7 @@ function pcRenderKPIs(projects){
     for(const m of LOC_MATCHERS){
       if(m.test(branch)){
         locStats[m.key].n++;
-        locStats[m.key].rev += (p.total || 0);
+        locStats[m.key].rev += (p.revTotal || 0);
         break;
       }
     }
@@ -3649,14 +3666,14 @@ function pcRenderHeadlineBar(projects){
   };
   bar.innerHTML = seg('mod', tot.mod) + seg('neo', tot.neo) + seg('stu', tot.stu) + seg('svc', tot.svc);
 
-  const fmt = v => '₹' + (v/1e7).toFixed(2) + ' Cr';
+  const fmt = v => v.toLocaleString('en-IN') + ' items';
   document.getElementById('pc-mix-legend').innerHTML = `
     <span><i style="background:var(--accent)"></i> Modular <span class="v">${fmt(tot.mod)}</span></span>
     <span><i style="background:#7a5e16"></i> Neo Modular <span class="v">${fmt(tot.neo)}</span></span>
     <span><i style="background:var(--accent-2)"></i> Studio <span class="v">${fmt(tot.stu)}</span></span>
     <span><i style="background:#3b6086"></i> Service <span class="v">${fmt(tot.svc)}</span></span>
   `;
-  document.getElementById('pc-bar-sub').textContent = `based on Project Value (₹) across ${projects.length.toLocaleString('en-IN')} PKOs`;
+  document.getElementById('pc-bar-sub').textContent = `based on line-item count across ${projects.length.toLocaleString('en-IN')} PKOs`;
 }
 
 function pcRenderBreakdowns(projects){
@@ -3665,8 +3682,9 @@ function pcRenderBreakdowns(projects){
     for(const p of projects){
       const k = keyFn(p) || '(blank)';
       let g = groups.get(k);
-      if(!g){ g = {mod:0,neo:0,stu:0,svc:0,total:0}; groups.set(k,g); }
+      if(!g){ g = {mod:0,neo:0,stu:0,svc:0,total:0,rev:0}; groups.set(k,g); }
       g.mod += p.mod; g.neo += p.neo; g.stu += p.stu; g.svc += p.svc; g.total += p.total;
+      g.rev += p.revTotal || 0;
     }
     const rows = [...groups.entries()].sort((a,b) => b[1].total - a[1].total).slice(0,8);
     const el = document.getElementById(containerId);
@@ -3677,9 +3695,12 @@ function pcRenderBreakdowns(projects){
     el.innerHTML = rows.map(([k, g]) => {
       const total = g.total || 1;
       const w = v => (v/total*100).toFixed(2) + '%';
-      const fmt = v => '₹' + (v/1e7).toFixed(1) + ' Cr';
+      // Right-side total shows ITEM count (consistent with the bar). Revenue
+      // shown in the tooltip so a curious user can hover for ₹ context.
+      const itemLabel = g.total.toLocaleString('en-IN') + ' items';
+      const revLabel  = g.rev > 0 ? '₹' + (g.rev/1e7).toFixed(2) + ' Cr' : '';
       return `
-        <div class="pc-bd-row">
+        <div class="pc-bd-row" title="${escapeHtml(k)} — ${itemLabel}${revLabel?' · '+revLabel:''}">
           <span class="lbl" title="${escapeHtml(k)}">${escapeHtml(k)}</span>
           <div class="bar">
             <div style="background:var(--accent);width:${w(g.mod)}"></div>
@@ -3687,7 +3708,7 @@ function pcRenderBreakdowns(projects){
             <div style="background:var(--accent-2);width:${w(g.stu)}"></div>
             <div style="background:#3b6086;width:${w(g.svc)}"></div>
           </div>
-          <span class="total">${fmt(g.total)}</span>
+          <span class="total">${itemLabel}</span>
         </div>
       `;
     }).join('');
@@ -3797,17 +3818,24 @@ function pcResetFilters(){
 
 function pcDownloadCsv(){
   const projects = STATE._pcProjects || [];
-  const headers = ['PID','Location','Project Type','Project Value (₹)','Total Spend (₹)','Modular (₹)','Modular %','Neo Modular (₹)','Neo Modular %','Studio (₹)','Studio %','Service (₹)','Service %'];
+  const headers = [
+    'PID','Location','Project Type',
+    'Project Value (₹)','Total Items','Total Revenue (₹)',
+    'Modular Items','Modular %','Modular Revenue (₹)',
+    'Neo Modular Items','Neo Modular %','Neo Modular Revenue (₹)',
+    'Studio Items','Studio %','Studio Revenue (₹)',
+    'Service Items','Service %','Service Revenue (₹)',
+  ];
   const rows = projects.map(p => {
     const total = p.total || 1;
     const pct = v => total > 0 ? (v/total*100).toFixed(1) : '0';
     return [
       p.projectNo || '', p.location || '', p.projectType || '',
-      p.projectValue || 0, Math.round(p.total),
-      Math.round(p.mod), pct(p.mod) + '%',
-      Math.round(p.neo), pct(p.neo) + '%',
-      Math.round(p.stu), pct(p.stu) + '%',
-      Math.round(p.svc), pct(p.svc) + '%',
+      p.projectValue || 0, p.total, Math.round(p.revTotal || 0),
+      p.mod, pct(p.mod) + '%', Math.round(p.revMod || 0),
+      p.neo, pct(p.neo) + '%', Math.round(p.revNeo || 0),
+      p.stu, pct(p.stu) + '%', Math.round(p.revStu || 0),
+      p.svc, pct(p.svc) + '%', Math.round(p.revSvc || 0),
     ];
   });
   saveFile(`project_composition_${todayStamp()}.csv`, toCsv(headers, rows));
